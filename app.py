@@ -9,7 +9,7 @@ from flask import Flask, jsonify, request, send_from_directory
 load_dotenv()
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE = os.path.join(APP_DIR, "powerflix.db")
+DATABASE = os.path.join(APP_DIR, "PowerFlicks.db")
 TMDB_BASE = "https://api.themoviedb.org/3"
 TOKEN = os.getenv("TMDB_API_TOKEN", "")
 
@@ -45,7 +45,7 @@ def init_db():
 
 
 def device_id():
-    value = request.headers.get("X-PowerFlix-Device", "").strip()
+    value = request.headers.get("X-PowerFlicks-Device", "").strip()
     if not value or len(value) > 128:
         return None
     return value
@@ -102,7 +102,7 @@ def movie_detail(movie_id):
         return error
     with closing(db()) as connection:
         reviews = connection.execute("SELECT author, rating, comment, created_at FROM reviews WHERE movie_id=? ORDER BY id DESC", (movie_id,)).fetchall()
-    data["powerflix_reviews"] = [dict(row) for row in reviews]
+    data["PowerFlicks_reviews"] = [dict(row) for row in reviews]
     return jsonify(data)
 
 
