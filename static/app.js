@@ -1,45 +1,27 @@
-// ========================================
-// PowerFlicks - Frontend Application
-// ========================================
-
-// ----------------------------------------
-// Application State
-// ----------------------------------------
-
 const state = {
     list: "popular",
     movies: [],
     watchlist: new Set(),
-
-    device: localStorage.PowerFlicksDevice || crypto.randomUUID(),
-
+    device: localStorage.powerFlicksDevice || crypto.randomUUID(),
     page: 1,
     totalPages: 1,
     loading: false,
-    hasMore: true,
-
+    view: "category",
     requestId: 0,
     searchQuery: ""
 };
 
-localStorage.PowerFlicksDevice = state.device;
-
-
-// ----------------------------------------
-// API Helper
-// ----------------------------------------
+localStorage.powerFlicksDevice = state.device;
 
 const api = async (url, options = {}) => {
     const response = await fetch(url, {
         ...options,
-
         headers: {
             "Content-Type": "application/json",
             "X-PowerFlicks-Device": state.device,
             ...(options.headers || {})
         }
     });
-
     const data = await response.json();
 
     if (!response.ok) {
@@ -49,203 +31,147 @@ const api = async (url, options = {}) => {
     return data;
 };
 
+const image = (path, size = "w500") => path
+    ? `https://image.tmdb.org/t/p/${size}${path}`
+    : "https://placehold.co/500x750/172033/a5b1c5?text=No+poster";
 
-// ----------------------------------------
-// Image Helper
-// ----------------------------------------
-
-const image = (
-    path,
-    size = "w500"
-) => {
-    if (path) {
-        return `https://image.tmdb.org/t/p/${size}${path}`;
-    }
-
-    return "https://placehold.co/500x750/172033/a5b1c5?text=No+poster";
-};
-
-
-// ----------------------------------------
-// HTML Escape Helper
-// ----------------------------------------
-
-const esc = (value) => {
-    return String(value || "").replace(
-        /[&<>'"]/g,
-        (character) => ({
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            "'": "&#39;",
-            '"': "&quot;"
-        })[character]
-    );
-};
-
-
-// ----------------------------------------
-// Watchlist
-// ----------------------------------------
+const esc = (value) => String(value || "").replace(/[&<>'"]/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "'": "&#39;",
+    '"': "&quot;"
+})[character]);
 
 async function getWatchlist() {
     const data = await api("/api/watchlist");
-
     state.watchlist = new Set(data.movie_ids);
-
     updateCount();
 }
 
-
 function updateCount() {
-    document.querySelector("#watchlist-count").textContent =
-        state.watchlist.size;
+    document.querySelector("#watchlist-count").textContent = state.watchlist.size;
 }
 
-
-// ----------------------------------------
-// Movie Card
-// ----------------------------------------
-
 function card(movie) {
-    const template =
-        document.querySelector("#card-template");
-
-    const node =
-        template.content.firstElementChild.cloneNode(true);
-
-    const poster =
-        node.querySelector("img");
-
-    const score =
-        node.querySelector(".score");
-
-    const title =
-        node.querySelector("h3");
-
-    const year =
-        node.querySelector("p");
-
-    const save =
-        node.querySelector(".save");
-
+    const node = document.querySelector("#card-template").content.firstElementChild.cloneNode(true);
+    const poster = node.querySelector("img");
+    const save = node.querySelector(".save");
+    const saved = state.watchlist.has(movie.id);
 
     poster.src = image(movie.poster_path);
     poster.alt = movie.title;
+    node.querySelector(".score").textContent = `★ ${Number(movie.vote_average || 0).toFixed(1)}`;
+    node.querySelector("h3").textContent = movie.title;
+    node.querySelector("p").textContent = (movie.release_date || "").slice(0, 4) || "Release date TBA";
+    node.querySelector(".poster").onclick = () => detail(movie.id);
 
-    score.textContent =
-        `★ ${Number(movie.vote_average || 0).toFixed(1)}`;
-
-    title.textContent =
-        movie.title;
-
-    year.textContent =
-        (movie.release_date || "").slice(0, 4) ||
-        "Release date TBA";
-
-
-    // Open movie details
-    node.querySelector(".poster").onclick = () => {
-        detail(movie.id);
-    };
-
-
-    // Watchlist button
-    const saved =
-        state.watchlist.has(movie.id);
-
-    save.textContent =
-        saved
-            ? "✓ In My List"
-            : "+ My List";
-
-    save.classList.toggle(
-        "active",
-        saved
-    );
-
-    save.onclick = () => {
-        toggle(movie.id);
-    };
-
+    save.textContent = saved ? "✓ In My List" : "+ My List";
+    save.classList.toggle("active", saved);
+    save.onclick = () => toggle(movie.id);
 
     return node;
 }
 
-
-// ----------------------------------------
-// Render Movies
-// ----------------------------------------
-
 function render(
     movies,
     status = "",
-    replace = true
+    replace = true,
+    showEmptyMessage = true
 ) {
-    const grid =
-        document.querySelector("#movies");
-
-    const statusElement =
-        document.querySelector("#status");
-
+    const grid = document.querySelector("#movies");
+    const statusElement = document.querySelector("#status");
 
     if (replace) {
         grid.replaceChildren();
     }
 
+    statusElement.textContent = status;
 
-    statusElement.textContent =
-        status;
-
-
-    if (!movies.length && replace) {
-        grid.innerHTML =
-            '<p class="empty">No movies found. Try a different search.</p>';
-
+    if (!movies.length && replace && showEmptyMessage) {
+        grid.innerHTML = '<p class="empty">No movies found. Try a different search.</p>';
         return;
     }
 
-
-    // I Removed the old "No movies found" message(so that when scrolling that issue wont occur when actual movies are being added. )
-    const emptyMessage =
-        grid.querySelector(".empty");
-
+    const emptyMessage = grid.querySelector(".empty");
     if (emptyMessage && movies.length) {
         emptyMessage.remove();
     }
 
-
-    movies.forEach((movie) => {
-        grid.append(card(movie));
-    });
+    movies.forEach((movie) => grid.append(card(movie)));
 }
 
-// ----------------------------------------
-// Load Movie Pages
-// ----------------------------------------
+function updatePagination() {
+    const pagination = document.querySelector("#pagination");
+    pagination.replaceChildren();
 
-async function loadNextPage() {
-    // Prevent duplicate requests
+    if (state.view !== "category" || state.totalPages <= 1) {
+        pagination.hidden = true;
+        return;
+    }
+
+    pagination.hidden = false;
+
+    const addButton = (label, page, disabled = false, selected = false) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = label;
+        button.disabled = disabled;
+        button.setAttribute("aria-current", selected ? "page" : "false");
+        button.onclick = () => loadPage(page);
+        pagination.append(button);
+    };
+
+    addButton("Previous", state.page - 1, state.page === 1);
+
+    const firstPage = Math.max(1, state.page - 2);
+    const lastPage = Math.min(state.totalPages, state.page + 2);
+
+    if (firstPage > 1) {
+        addButton("1", 1);
+        if (firstPage > 2) {
+            pagination.append("…");
+        }
+    }
+
+    for (let page = firstPage; page <= lastPage; page += 1) {
+        addButton(String(page), page, false, page === state.page);
+    }
+
+    if (lastPage < state.totalPages) {
+        if (lastPage < state.totalPages - 1) {
+            pagination.append("…");
+        }
+        addButton(String(state.totalPages), state.totalPages);
+    }
+
+    addButton("Next", state.page + 1, state.page === state.totalPages);
+}
+
+async function loadPage(page) {
+    // Prevent duplicate requests.
     if (state.loading) {
         return;
     }
 
-    // No more pages
-    if (!state.hasMore) {
+    // Ignore invalid page requests.
+    if (page < 1 || page > state.totalPages) {
         return;
     }
 
     state.loading = true;
 
     const currentRequest = ++state.requestId;
+    render([], "Loading movies…", true, false);
+    updatePagination();
 
     try {
         const data = await api(
-            `/api/movies?list=${state.list}&page=${state.page}`
+            `/api/movies?list=${state.list}&page=${page}`
         );
 
-        // The user switched to another category
-        // while this request was loading.
+        // Ignore stale requests if the user changed
+        // category/search/list while this request was loading.
         if (currentRequest !== state.requestId) {
             return;
         }
@@ -253,66 +179,38 @@ async function loadNextPage() {
         const movies = data.results || [];
 
         state.totalPages = data.total_pages || 1;
+        state.page = page;
+        state.movies = movies;
 
-        state.hasMore =
-            state.page < state.totalPages;
-
-        state.movies.push(...movies);
-
-        render(
-            movies,
-            `${state.movies.length} titles`,
-            false
-        );
-
-        state.page += 1;
-
+        render(movies, `${movies.length} titles`);
+        updatePagination();
     } catch (error) {
-        // Only show the error if this is
-        // still the active request.
+        // A stale request must not overwrite the
+        // status of the currently active request.
         if (currentRequest === state.requestId) {
-            document.querySelector("#status").textContent =
-                error.message;
+            document.querySelector("#status").textContent = error.message;
         }
-
     } finally {
-        // An old request must not change the
-        // loading state of a newer request.
+        // A stale request must not change the loading
+        // state belonging to the current request.
         if (currentRequest === state.requestId) {
             state.loading = false;
         }
     }
 }
 
-// ----------------------------------------
-// Load a Movie Category
-// ----------------------------------------
-
 async function load(list = state.list) {
-
     state.list = list;
-
     state.page = 1;
     state.totalPages = 1;
-    state.hasMore = true;
     state.loading = false;
     state.movies = [];
     state.searchQuery = "";
+    state.view = "category";
 
-    state.requestId += 1;
-
-
-    // Update selected navigation button
-    document
-        .querySelectorAll("nav [data-list]")
-        .forEach((button) => {
-
-            button.classList.toggle(
-                "selected",
-                button.dataset.list === list
-            );
-        });
-
+    document.querySelectorAll("nav [data-list]").forEach((button) => {
+        button.classList.toggle("selected", button.dataset.list === list);
+    });
 
     const names = {
         popular: "Popular movies",
@@ -320,45 +218,19 @@ async function load(list = state.list) {
         now_playing: "Now playing",
         upcoming: "Coming soon"
     };
+    document.querySelector("#heading").textContent = names[list];
 
-
-    document.querySelector("#heading").textContent =
-        names[list];
-
-
-    // Clear the previous category while the new one loads
-    render([], "Loading movies…");
-
-    // Load first page
-    await loadNextPage();
+    await loadPage(1);
 }
 
-
-// ----------------------------------------
-// Watchlist Toggle
-// ----------------------------------------
-
 async function toggle(id) {
-
-    const present =
-        state.watchlist.has(id);
-
+    const present = state.watchlist.has(id);
 
     try {
-
-        await api(
-            "/api/watchlist",
-            {
-                method: present
-                    ? "DELETE"
-                    : "POST",
-
-                body: JSON.stringify({
-                    movie_id: id
-                })
-            }
-        );
-
+        await api("/api/watchlist", {
+            method: present ? "DELETE" : "POST",
+            body: JSON.stringify({ movie_id: id })
+        });
 
         if (present) {
             state.watchlist.delete(id);
@@ -366,479 +238,191 @@ async function toggle(id) {
             state.watchlist.add(id);
         }
 
-
         updateCount();
-
-
-        // Re-render current movies
-        render(
-            state.movies,
-            `${state.movies.length} titles`
-        );
-
-
+        render(state.movies, `${state.movies.length} titles`);
     } catch (error) {
-
         alert(error.message);
     }
 }
 
-
-// ----------------------------------------
-// My List
-// ----------------------------------------
-
 async function showWatchlist() {
-
-    state.requestId += 1;
+    const currentRequest = ++state.requestId;
 
     state.loading = false;
-    state.hasMore = false;
     state.searchQuery = "";
     state.movies = [];
-
-
-    document.querySelector("#heading").textContent =
-        "My List";
-
-
-    render(
-        [],
-        "Loading your list…"
-    );
-
+    state.page = 1;
+    state.totalPages = 1;
+    state.view = "watchlist";
+    document.querySelector("#heading").textContent = "My List";
+    render([], "Loading your list…", true, false);
+    updatePagination();
 
     try {
+        const records = [];
+        let unavailable = 0;
 
-        const records =
-            await Promise.all(
-                [...state.watchlist].map(
-                    (id) =>
-                        api(`/api/movies/${id}`)
-                )
+        // Load saved titles one at a time so a large watchlist does not
+        // send a burst of detail requests to the movie service. One missing
+        // or temporarily unavailable title should not hide the whole list.
+        for (const id of state.watchlist) {
+            try {
+                records.push(await api(`/api/movies/${id}`));
+            } catch (error) {
+                unavailable += 1;
+            }
+
+            if (currentRequest !== state.requestId) {
+                return;
+            }
+        }
+
+        if (currentRequest !== state.requestId) {
+            return;
+        }
+
+        state.movies = records;
+        if (!records.length && unavailable) {
+            render(
+                [],
+                "Saved movies are temporarily unavailable. Please try again.",
+                true,
+                false
             );
+            return;
+        }
 
-
-        state.movies =
-            records;
-
-
-        render(
-            records,
-            `${records.length} saved titles`
-        );
-
-
+        const status = unavailable
+            ? `${records.length} saved titles · ${unavailable} unavailable`
+            : `${records.length} saved titles`;
+        render(records, status);
     } catch (error) {
-
-        render(
-            [],
-            error.message
-        );
+        if (currentRequest === state.requestId) {
+            render([], error.message);
+        }
     }
 }
 
-
-// ----------------------------------------
-// Movie Details
-// ----------------------------------------
-
 async function detail(id) {
-
-    const modal =
-        document.querySelector("#modal");
-
-    const content =
-        document.querySelector("#modal-content");
-
-
-    content.innerHTML =
-        '<p class="empty">Loading…</p>';
-
-
+    const modal = document.querySelector("#modal");
+    const content = document.querySelector("#modal-content");
+    content.innerHTML = '<p class="empty">Loading…</p>';
     modal.showModal();
 
-
     try {
-
-        const movie =
-            await api(`/api/movies/${id}`);
-
-
-        const cast =
-            (movie.credits?.cast || [])
-                .slice(0, 4)
-                .map((person) => person.name)
-                .join(", ");
-
-
-        const reviews =
-            (movie.PowerFlicks_reviews || [])
-                .map(
-                    (review) => `
-                        <div class="review">
-                            <strong>
-                                ${esc(review.author)}
-                            </strong>
-
-                            <small>
-                                ★ ${review.rating}/5
-                            </small>
-
-                            <br>
-
-                            ${esc(review.comment)}
-                        </div>
-                    `
-                )
-                .join("")
-            ||
-            "<p>No PowerFlicks reviews yet. Be the first.</p>";
-
+        const movie = await api(`/api/movies/${id}`);
+        const cast = (movie.credits?.cast || []).slice(0, 4).map((person) => person.name).join(", ");
+        const reviews = (movie.powerflicks_reviews || []).map((review) => `
+            <div class="review">
+                <strong>${esc(review.author)}</strong>
+                <small>★ ${review.rating}/5</small><br>
+                ${esc(review.comment)}
+            </div>
+        `).join("") || "<p>No PowerFlicks reviews yet. Be the first.</p>";
 
         content.innerHTML = `
-            <section
-                class="detail-hero"
-                style="
-                    background-image:
-                    linear-gradient(
-                        0deg,
-                        #111827 0%,
-                        transparent 90%
-                    ),
-                    url('${image(
-                        movie.backdrop_path,
-                        "original"
-                    )}');
-                "
-            >
-                <p>
-                    ${movie.release_date?.slice(0, 4) || ""}
-                    ·
-                    ${movie.runtime || "—"} min
-                </p>
-
-                <h2>
-                    ${esc(movie.title)}
-                </h2>
+            <section class="detail-hero" style="background-image:linear-gradient(0deg,#111827 0%,transparent 90%),url('${image(movie.backdrop_path, "original")}')">
+                <p>${movie.release_date?.slice(0, 4) || ""} · ${movie.runtime || "—"} min</p>
+                <h2>${esc(movie.title)}</h2>
             </section>
-
-
             <section class="detail">
-
-                <p class="genres">
-                    ${(movie.genres || [])
-                        .map(
-                            (genre) =>
-                                esc(genre.name)
-                        )
-                        .join(" · ")}
-                </p>
-
-
-                <p>
-                    ${esc(movie.overview)}
-                </p>
-
-
-                <p>
-                    <b>Cast:</b>
-                    ${esc(
-                        cast || "Not available"
-                    )}
-                </p>
-
-
+                <p class="genres">${(movie.genres || []).map((genre) => esc(genre.name)).join(" · ")}</p>
+                <p>${esc(movie.overview)}</p>
+                <p><b>Cast:</b> ${esc(cast || "Not available")}</p>
                 <div class="reviews">
-
-                    <h3>
-                        Community reviews
-                    </h3>
-
+                    <h3>Community reviews</h3>
                     ${reviews}
-
-
-                    <form
-                        class="review-form"
-                        id="review-form"
-                    >
-
-                        <input
-                            name="author"
-                            maxlength="50"
-                            required
-                            placeholder="Your name"
-                        >
-
-
+                    <form class="review-form" id="review-form">
+                        <input name="author" maxlength="50" required placeholder="Your name">
                         <select name="rating">
-
-                            <option value="5">
-                                ★★★★★ — Loved it
-                            </option>
-
-                            <option value="4">
-                                ★★★★ — Great
-                            </option>
-
-                            <option value="3">
-                                ★★★ — Good
-                            </option>
-
-                            <option value="2">
-                                ★★ — Fair
-                            </option>
-
-                            <option value="1">
-                                ★ — Poor
-                            </option>
-
+                            <option value="5">★★★★★ — Loved it</option>
+                            <option value="4">★★★★ — Great</option>
+                            <option value="3">★★★ — Good</option>
+                            <option value="2">★★ — Fair</option>
+                            <option value="1">★ — Poor</option>
                         </select>
-
-
-                        <textarea
-                            name="comment"
-                            maxlength="1000"
-                            required
-                            placeholder="Share your thoughts"
-                        ></textarea>
-
-
-                        <button class="primary">
-                            Post review
-                        </button>
-
+                        <textarea name="comment" maxlength="1000" required placeholder="Share your thoughts"></textarea>
+                        <button class="primary">Post review</button>
                     </form>
-
                 </div>
-
             </section>
         `;
 
-
-        // Review submission
-        document.querySelector(
-            "#review-form"
-        ).onsubmit = async (event) => {
-
+        document.querySelector("#review-form").onsubmit = async (event) => {
             event.preventDefault();
-
-
-            const form =
-                new FormData(event.target);
-
+            const form = new FormData(event.target);
 
             try {
-
-                await api(
-                    `/api/movies/${id}/reviews`,
-                    {
-                        method: "POST",
-
-                        body: JSON.stringify({
-                            author:
-                                form.get("author"),
-
-                            rating:
-                                Number(
-                                    form.get("rating")
-                                ),
-
-                            comment:
-                                form.get("comment")
-                        })
-                    }
-                );
-
-
+                await api(`/api/movies/${id}/reviews`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        author: form.get("author"),
+                        rating: Number(form.get("rating")),
+                        comment: form.get("comment")
+                    })
+                });
                 detail(id);
-
-
             } catch (error) {
-
                 alert(error.message);
             }
         };
-
-
     } catch (error) {
-
-        content.innerHTML =
-            `<p class="empty">
-                ${esc(error.message)}
-            </p>`;
+        content.innerHTML = `<p class="empty">${esc(error.message)}</p>`;
     }
 }
 
-
-// ----------------------------------------
-// Search
-// ----------------------------------------
-
 let searchTimer;
+document.querySelector("#search").oninput = (event) => {
+    clearTimeout(searchTimer);
 
+    const query = event.target.value.trim();
+    const currentRequest = ++state.requestId;
+    state.searchQuery = query;
+    state.loading = false;
+    state.view = query ? "search" : "category";
+    updatePagination();
 
-document.querySelector("#search").oninput =
-    (event) => {
-
-        clearTimeout(searchTimer);
-
-
-        const query =
-            event.target.value.trim();
-
-
-        searchTimer =
-            setTimeout(
-                async () => {
-
-                    // Empty search → return to category
-                    if (!query) {
-                        load(state.list);
-                        return;
-                    }
-
-
-                    state.searchQuery =
-                        query;
-
-                    state.requestId += 1;
-
-                    state.loading = false;
-                    state.hasMore = false;
-
-
-                    document.querySelector(
-                        "#heading"
-                    ).textContent =
-                        `Results for “${query}”`;
-
-
-                    render(
-                        [],
-                        "Searching…"
-                    );
-
-
-                    try {
-
-                        const data =
-                            await api(
-                                `/api/search?q=${encodeURIComponent(
-                                    query
-                                )}`
-                            );
-
-
-                        state.movies =
-                            data.results || [];
-
-
-                        render(
-                            state.movies,
-                            `${data.total_results || 0} results`
-                        );
-
-
-                    } catch (error) {
-
-                        render(
-                            [],
-                            error.message
-                        );
-                    }
-
-                },
-                300
-            );
-    };
-
-
-// ----------------------------------------
-// Infinite Scroll
-// ----------------------------------------
-
-window.addEventListener(
-    "scroll",
-    () => {
-
-        // Don't paginate search results
-        if (state.searchQuery) {
+    searchTimer = setTimeout(async () => {
+        if (currentRequest !== state.requestId) {
             return;
         }
 
-
-        // Don't paginate My List
-        if (!state.hasMore) {
+        if (!query) {
+            load(state.list);
             return;
         }
 
+        document.querySelector("#heading").textContent = `Results for “${query}”`;
+        render([], "Searching…", true, false);
+        updatePagination();
 
-        const scrollPosition =
-            window.innerHeight +
-            window.scrollY;
+        try {
+            const data = await api(`/api/search?q=${encodeURIComponent(query)}`);
 
+            if (currentRequest !== state.requestId) {
+                return;
+            }
 
-        const pageHeight =
-            document.documentElement.scrollHeight;
-
-
-        // Start loading when the user is
-        // approximately 600px from the bottom.
-        if (
-            pageHeight - scrollPosition < 600
-        ) {
-            loadNextPage();
+            state.movies = data.results || [];
+            render(state.movies, `${data.total_results || 0} results`);
+        } catch (error) {
+            if (currentRequest === state.requestId) {
+                render([], error.message);
+            }
         }
-    }
-);
-
-
-// ----------------------------------------
-// Navigation
-// ----------------------------------------
-
-document
-    .querySelectorAll("nav [data-list]")
-    .forEach((button) => {
-
-        button.onclick = () => {
-            load(button.dataset.list);
-        };
-    });
-
-
-document.querySelector(
-    "#watchlist-button"
-).onclick = showWatchlist;
-
-
-document.querySelector(
-    "#explore"
-).onclick = () => {
-    load("popular");
+    }, 300);
 };
 
+const pagination = document.createElement("nav");
+pagination.id = "pagination";
+pagination.setAttribute("aria-label", "Movie pages");
+document.querySelector("#movies").after(pagination);
 
-document.querySelector(
-    ".close"
-).onclick = () => {
-    document.querySelector(
-        "#modal"
-    ).close();
-};
+document.querySelectorAll("nav [data-list]").forEach((button) => {
+    button.onclick = () => load(button.dataset.list);
+});
+document.querySelector("#watchlist-button").onclick = showWatchlist;
+document.querySelector("#explore").onclick = () => load("popular");
+document.querySelector(".close").onclick = () => document.querySelector("#modal").close();
 
-
-// ----------------------------------------
-// Application Startup
-// ----------------------------------------
-
-getWatchlist()
-    .then(() => load())
-    .catch((error) => {
-
-        render(
-            [],
-            error.message
-        );
-    });
+getWatchlist().then(() => load()).catch((error) => render([], error.message));
