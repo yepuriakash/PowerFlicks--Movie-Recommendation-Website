@@ -1,4 +1,6 @@
 const state = {
+    // Keeping the current page and view explicit replaces the previous
+    // infinite-scroll-only flow with predictable numbered pagination.
     list: "popular",
     movies: [],
     watchlist: new Set(),
@@ -8,6 +10,7 @@ const state = {
     loading: false,
     view: "category",
     requestId: 0,
+    // A non-empty query disables category pagination while searching.
     searchQuery: ""
 };
 
@@ -88,6 +91,8 @@ function render(
 
     statusElement.textContent = status;
 
+    // Loading also renders an empty array. The extra flag prevents the old
+    // behavior where a loading screen incorrectly showed "No movies found".
     if (!movies.length && replace && showEmptyMessage) {
         grid.innerHTML = '<p class="empty">No movies found. Try a different search.</p>';
         return;
@@ -105,6 +110,7 @@ function updatePagination() {
     const pagination = document.querySelector("#pagination");
     pagination.replaceChildren();
 
+    // Search and My List are complete result sets, not paged categories.
     if (state.view !== "category" || state.totalPages <= 1) {
         pagination.hidden = true;
         return;
@@ -161,6 +167,8 @@ async function loadPage(page) {
 
     state.loading = true;
 
+    // Each request gets a generation number. A response from an older page
+    // or category is ignored instead of overwriting the current screen.
     const currentRequest = ++state.requestId;
     render([], "Loading movies…", true, false);
     updatePagination();
@@ -203,6 +211,8 @@ async function load(list = state.list) {
     state.list = list;
     state.page = 1;
     state.totalPages = 1;
+    // loadPage() owns loading=true. Resetting here lets the first page of a
+    // newly selected category start immediately instead of blocking itself.
     state.loading = false;
     state.movies = [];
     state.searchQuery = "";
@@ -246,6 +256,7 @@ async function toggle(id) {
 }
 
 async function showWatchlist() {
+    // Invalidate any category/search request before loading saved titles.
     const currentRequest = ++state.requestId;
 
     state.loading = false;
@@ -262,9 +273,10 @@ async function showWatchlist() {
         const records = [];
         let unavailable = 0;
 
-        // Load saved titles one at a time so a large watchlist does not
-        // send a burst of detail requests to the movie service. One missing
-        // or temporarily unavailable title should not hide the whole list.
+        // The previous Promise.all() rejected the entire list when one
+        // movie-detail request failed. Loading titles one at a time means
+        // available saved movies still appear, even if one is unavailable.
+        // It also avoids a burst of requests to the movie service.
         for (const id of state.watchlist) {
             try {
                 records.push(await api(`/api/movies/${id}`));
@@ -376,6 +388,8 @@ document.querySelector("#search").oninput = (event) => {
     clearTimeout(searchTimer);
 
     const query = event.target.value.trim();
+    // Invalidate a pending category/search response as soon as the query
+    // changes, rather than waiting for the debounce timer to finish.
     const currentRequest = ++state.requestId;
     state.searchQuery = query;
     state.loading = false;
