@@ -1,108 +1,336 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="PowerFlicks — discover movies, explore cast and details, save your watchlist, and share reviews.">
-  <meta name="theme-color" content="#070b15">
-  <title>PowerFlicks — Movie Discovery</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="description"
+        content="PowerFlicks — discover movies, explore cast and details, save your watchlist, and share reviews."
+    >
+    <meta name="theme-color" content="#080d10">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>PowerFlicks — Movie Discovery</title>
 
-  <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 
-<body>
-  <!-- ========================= HEADER ========================= -->
-  <header>
-    <a href="#" class="brand" id="explore" aria-label="PowerFlicks home">
-      Power<span>Flicks</span>
-    </a>
+<body data-theme="og">
 
-    <nav aria-label="Movie categories">
-      <button type="button" data-list="popular" class="selected">Popular</button>
-      <button type="button" data-list="top_rated">Top Rated</button>
-      <button type="button" data-list="now_playing">Now Playing</button>
-      <button type="button" data-list="upcoming">Upcoming</button>
-      <button type="button" id="watchlist-button">
-        My List <b id="watchlist-count">0</b>
-      </button>
-    </nav>
+    <!-- ========================= HEADER ========================= -->
 
-    <label class="search" aria-label="Search movies">
-      <span aria-hidden="true">⌕</span>
-      <input
-        id="search"
-        type="search"
-        autocomplete="off"
-        placeholder="Search movies..."
-        aria-label="Search movies"
-      >
-    </label>
-  </header>
+    <header>
 
-  <!-- ========================= MAIN ========================= -->
-  <main>
-    <!-- Hero -->
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-text">
-        <p class="eyebrow">PowerFlicks · MOVIE DISCOVERY</p>
-        <h1 id="hero-title">Find your next movie.</h1>
-        <p>
-          Browse popular, top-rated, currently playing and upcoming films.
-          Search for a movie to explore its poster, backdrop, cast, genres,
-          runtime, reviews and recommendations.
-        </p>
-        <button type="button" class="primary" onclick="document.querySelector('#search').focus()">
-          Search Movies
+        <a
+            href="#"
+            class="brand brand-occasion"
+            id="explore"
+            aria-label="PowerFlicks home"
+        >
+            <span class="brand-art" aria-hidden="true"></span>
+            <span class="brand-wordmark">Power<span>Flicks</span></span>
+        </a>
+
+        <nav aria-label="Movie categories">
+
+            <button
+                type="button"
+                data-list="popular"
+                class="selected"
+            >
+                Popular
+            </button>
+
+            <button
+                type="button"
+                data-list="top_rated"
+            >
+                Top Rated
+            </button>
+
+            <button
+                type="button"
+                data-list="now_playing"
+            >
+                Now Playing
+            </button>
+
+            <button
+                type="button"
+                data-list="upcoming"
+            >
+                Upcoming
+            </button>
+
+            <button
+                type="button"
+                id="watchlist-button"
+            >
+                My List <b id="watchlist-count">0</b>
+            </button>
+
+        </nav>
+
+        <label
+            class="search"
+            aria-label="Search movies"
+        >
+            <span aria-hidden="true">⌕</span>
+
+            <input
+                id="search"
+                type="search"
+                autocomplete="off"
+                placeholder="Search movies..."
+                aria-label="Search movies"
+            >
+        </label>
+
+    </header>
+
+    <!-- ========================= MAIN ========================= -->
+
+    <main>
+
+        <!-- ========================= HERO ========================= -->
+
+        <section
+            class="hero"
+            id="hero"
+            aria-labelledby="hero-title"
+        >
+
+            <div class="hero-art" aria-hidden="true"></div>
+
+            <!-- Hero content -->
+
+            <div class="hero-text">
+
+                <p class="eyebrow">They call him</p>
+
+                <p class="hero-og" aria-hidden="true">OG</p>
+
+                <h1 id="hero-title">PowerFlicks</h1>
+
+                <p
+                    class="hero-meta"
+                >
+                    Your cinema. Your rules.
+                </p>
+
+                <p
+                    class="hero-overview"
+                >
+                    The stories that own the screen, the performances that stay
+                    with you, and your next unforgettable watch — all in one place.
+                </p>
+
+                <div class="hero-actions">
+
+                    <button
+                        type="button"
+                        class="primary"
+                        id="hero-explore"
+                    >
+                        Explore Movies
+                    </button>
+
+                    <button
+                        type="button"
+                        class="secondary"
+                        id="hero-save"
+                    >
+                        + My List
+                    </button>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================= MOVIE SECTION ========================= -->
+
+        <section aria-labelledby="heading">
+
+            <div class="toolbar">
+
+                <div>
+
+                    <p class="section-kicker">
+                        The marquee
+                    </p>
+
+                    <h2 id="heading">
+                        Popular movies
+                    </h2>
+
+                    <p
+                        id="status"
+                        aria-live="polite"
+                    >
+                        Loading movies…
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div
+                id="movies"
+                class="grid"
+                aria-live="polite"
+            ></div>
+
+        </section>
+
+        <!-- ========================= EDITORIAL SECTION ========================= -->
+
+        <section
+            class="editorial"
+            aria-label="PowerFlicks editorial"
+        >
+
+            <article class="spotlight-panel">
+
+                <p class="section-kicker">
+                    Actor spotlight
+                </p>
+
+                <h2>
+                    Faces that made the screen feel bigger.
+                </h2>
+
+                <p>
+                    PowerFlicks is more than a list of titles.
+                    Follow the performers, eras and performances
+                    that stay with you after the credits roll.
+                </p>
+
+                <button
+                    type="button"
+                    class="text-action"
+                    id="spotlight-action"
+                >
+                    Explore now playing
+                    <span aria-hidden="true">→</span>
+                </button>
+
+            </article>
+
+            <article class="story-panel">
+
+                <p class="section-kicker">
+                    Cinema story
+                </p>
+
+                <h2>
+                    Every great film leaves a trace.
+                </h2>
+
+                <p>
+                    Save a film, open its details, and make its story
+                    part of your own watchlist.
+                </p>
+
+                <button
+                    type="button"
+                    class="text-action"
+                    id="story-action"
+                >
+                    Browse top rated
+                    <span aria-hidden="true">→</span>
+                </button>
+
+            </article>
+
+        </section>
+
+    </main>
+
+    <!-- ========================= MOVIE CARD TEMPLATE ========================= -->
+
+    <template id="card-template">
+
+        <article class="card">
+
+            <button
+                type="button"
+                class="poster"
+                aria-label="View movie details"
+            >
+
+                <img
+                    src=""
+                    alt=""
+                    loading="lazy"
+                >
+
+                <span class="score">
+                    ★ 0.0
+                </span>
+
+            </button>
+
+            <div class="card-copy">
+
+                <h3></h3>
+
+                <p></p>
+
+                <button
+                    type="button"
+                    class="save"
+                >
+                    + My List
+                </button>
+
+            </div>
+
+        </article>
+
+    </template>
+
+    <!-- ========================= MOVIE DETAILS MODAL ========================= -->
+
+    <dialog
+        id="modal"
+        aria-labelledby="modal-content"
+    >
+
+        <button
+            type="button"
+            class="close"
+            aria-label="Close movie details"
+        >
+            ×
         </button>
-      </div>
-    </section>
 
-    <!-- Movie section -->
-    <section aria-labelledby="heading">
-      <div class="toolbar">
-        <div>
-          <h2 id="heading">Popular movies</h2>
-          <p id="status" aria-live="polite">Loading movies…</p>
+        <div id="modal-content">
+
+            <p class="empty">
+                Loading…
+            </p>
+
         </div>
-      </div>
 
-      <div id="movies" class="grid" aria-live="polite"></div>
-    </section>
-  </main>
+    </dialog>
 
-  <!-- ========================= MOVIE CARD TEMPLATE ========================= -->
-  <template id="card-template">
-    <article class="card">
-      <button type="button" class="poster" aria-label="View movie details">
-        <img src="" alt="" loading="lazy">
-        <span class="score">★ 0.0</span>
-      </button>
+    <!--
+        app.js is the application layer.
 
-      <div class="card-copy">
-        <h3></h3>
-        <p></p>
-        <button type="button" class="save">+ My List</button>
-      </div>
-    </article>
-  </template>
+        It talks to app.py, which talks to TMDB and SQLite.
 
-  <!-- ========================= MOVIE DETAILS MODAL ========================= -->
-  <dialog id="modal" aria-labelledby="modal-content">
-    <button type="button" class="close" aria-label="Close movie details">×</button>
-    <div id="modal-content">
-      <p class="empty">Loading…</p>
-    </div>
-  </dialog>
+        The TMDB token is therefore never exposed in this HTML file.
+    -->
 
-  <!--
-    app.js is the application layer.
-    It talks to app.py, which talks to TMDB and SQLite.
-    The TMDB token is therefore never exposed in this HTML file.
-  -->
-  <script src="/static/app.js"></script>
+    <script src="/static/app.js"></script>
+
 </body>
 </html>
