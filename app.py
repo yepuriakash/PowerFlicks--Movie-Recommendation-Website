@@ -544,55 +544,121 @@ def get_person(person_id):
 
 @app.get("/api/spotlight/birthday")
 def get_birthday_spotlight():
-    now = datetime.datetime.now()
+    """
+    Find a notable Indian cinema personality whose birthday is today.
 
-    month = now.month
-    day = now.day
+    TMDB does not provide a direct "birthday today" people endpoint,
+    so we:
+      1. Fetch several pages of popular people.
+      2. Check their detailed TMDB profiles.
+      3. Keep people whose birthday matches today.
+      4. Keep people with an Indian birthplace.
+      5. Rank matching people by TMDB popularity.
+      6. Return the strongest match.
 
-    # ------------------------------------------------------------------------
-    # GET POPULAR PEOPLE FROM TMDB
-    # ------------------------------------------------------------------------
+    Nothing is hard-coded to a particular actor.
+    """
 
-    data, error = tmdb(
-        "/person/popular",
-        {
-            "language": "en-US",
-            "page": 1,
-        },
-        TMDB_LIST_CACHE_TTL
-    )
+    today = datetime.datetime.now()
 
-    if error:
-        return error
+    current_month = today.month
+    current_day = today.day
 
-    candidates = data.get(
-        "results",
-        []
-    )
+    # --------------------------------------------------------------------
+    # INDIAN CINEMA LOCATION MATCHING
+    # --------------------------------------------------------------------
 
-    selected_person = None
+    indian_locations = [
+        "india",
+        "mumbai",
+        "bombay",
+        "delhi",
+        "new delhi",
+        "hyderabad",
+        "telangana",
+        "andhra",
+        "andhra pradesh",
+        "chennai",
+        "tamil nadu",
+        "karnataka",
+        "kerala",
+        "kolkata",
+        "west bengal",
+        "punjab",
+        "maharashtra",
+        "uttar pradesh",
+        "bihar",
+        "rajasthan",
+        "gujarat",
+        "odisha",
+        "assam",
+        "jharkhand",
+        "madhya pradesh",
+        "chhattisgarh",
+        "goa",
+        "uttarakhand",
+        "himachal pradesh",
+        "jammu",
+        "kashmir",
+        "sikkim",
+        "manipur",
+        "meghalaya",
+        "tripura",
+        "nagaland",
+        "mizoram",
+        "arunachal pradesh",
+    ]
 
-    # ------------------------------------------------------------------------
-    # LOOK THROUGH POPULAR PEOPLE FOR
-    # A NOTABLE INDIAN CINEMA PERSONALITY
-    # ------------------------------------------------------------------------
+    # --------------------------------------------------------------------
+    # CHECK WHETHER A PERSON IS RELEVANT TO INDIAN CINEMA
+    # --------------------------------------------------------------------
 
-    for person in candidates:
+    def is_indian_person(person_data):
 
-        # Skip people with very low popularity
-        if person.get(
-            "popularity",
-            0
-        ) < 5.0:
-            continue
+        place = (
+            person_data.get("place_of_birth")
+            or ""
+        ).lower()
 
-        person_id = person.get("id")
+        department = (
+            person_data.get("known_for_department")
+            or ""
+        ).lower()
+
+        # We mainly want actors, directors and other cinema professionals.
+        valid_departments = {
+            "acting",
+            "directing",
+            "production",
+            "writing",
+            "camera",
+            "sound",
+            "editing",
+            "art",
+            "costume & make-up",
+        }
+
+        if not any(
+            location in place
+            for location in indian_locations
+        ):
+            return False
+
+        return (
+            department in valid_departments
+            or not department
+        )
+
+    # --------------------------------------------------------------------
+    # CHECK ONE PERSON
+    # --------------------------------------------------------------------
+
+    def check_person(person_id, popularity=0):
 
         if not person_id:
-            continue
+            return None
 
-        # Get full person details
-        p_data, p_error = tmdb(
+        person_data, person_error = tmdb(
             f"/person/{person_id}",
             {
                 "language": "en-US"
@@ -600,97 +666,159 @@ def get_birthday_spotlight():
             TMDB_DETAIL_CACHE_TTL
         )
 
-        if p_error or not p_data:
-            continue
+        if person_error or not person_data:
+            return None
 
-        birthday = p_data.get(
-            "birthday"
-        )
+        birthday = person_data.get("birthday")
 
-        # Must have a birthday
         if not birthday:
-            continue
+            return None
 
         try:
-            bday = datetime.datetime.strptime(
+            birth_date = datetime.datetime.strptime(
                 birthday,
                 "%Y-%m-%d"
             )
 
-            # Birthday must be today
-            if (
-                bday.month != month
-                or bday.day != day
-            ):
-                continue
-
         except ValueError:
-            continue
+            return None
 
-        # --------------------------------------------------------------------
-        # CHECK BIRTHPLACE FOR INDIAN RELEVANCE
-        # --------------------------------------------------------------------
+        # ---------------------------------------------------------------
+        # BIRTHDAY CHECK
+        # ---------------------------------------------------------------
 
-        place = (
-            p_data.get(
-                "place_of_birth"
-            )
-            or ""
-        ).lower()
+        if (
+            birth_date.month != current_month
+            or birth_date.day != current_day
+        ):
+            return None
 
-        # Indian locations / regions
-        indian_locations = [
-            "india",
-            "mumbai",
-            "bombay",
-            "delhi",
-            "new delhi",
-            "hyderabad",
-            "telangana",
-            "andhra",
-            "chennai",
-            "tamil nadu",
-            "karnataka",
-            "kerala",
-            "kolkata",
-            "west bengal",
-            "punjab",
-            "maharashtra",
-            "uttar pradesh",
-            "bihar",
-            "rajasthan",
-            "gujarat",
-            "odisha",
-            "assam",
-            "jharkhand",
-            "madhya pradesh",
-            "chhattisgarh",
-        ]
+        # ---------------------------------------------------------------
+        # INDIAN CINEMA CHECK
+        # ---------------------------------------------------------------
 
-        is_indian = any(
-            location in place
-            for location in indian_locations
+        if not is_indian_person(person_data):
+            return None
+
+        # Preserve popularity from /person/popular.
+        person_data["_spotlight_popularity"] = (
+            float(popularity or 0)
         )
 
-        if not is_indian:
+        return person_data
+
+    # --------------------------------------------------------------------
+    # SEARCH MULTIPLE POPULAR PEOPLE PAGES
+    # --------------------------------------------------------------------
+
+    matches = []
+
+    for page in range(1, 11):
+
+        data, error = tmdb(
+            "/person/popular",
+            {
+                "language": "en-US",
+                "page": page,
+            },
+            TMDB_LIST_CACHE_TTL
+        )
+
+        if error or not data:
             continue
 
-        # We found a valid Indian cinema personality
-        selected_person = p_data
-        break
+        candidates = data.get(
+            "results",
+            []
+        )
 
-    # ------------------------------------------------------------------------
-    # NO NOTABLE INDIAN BIRTHDAY TODAY
-    # ------------------------------------------------------------------------
+        if not candidates:
+            continue
 
-    if not selected_person:
+        for person in candidates:
+
+            person_id = person.get("id")
+
+            if not person_id:
+                continue
+
+            popularity = person.get(
+                "popularity",
+                0
+            )
+
+            # Ignore extremely low-ranked profiles.
+            if popularity < 5:
+                continue
+
+            person_result = check_person(
+                person_id,
+                popularity
+            )
+
+            if person_result:
+                matches.append(
+                    person_result
+                )
+
+    # --------------------------------------------------------------------
+    # NO MATCH
+    # --------------------------------------------------------------------
+
+    if not matches:
         return jsonify({
             "spotlight": None
         }), 200
 
-    # ------------------------------------------------------------------------
-    # FETCH MOVIE / TV CREDITS
-    # ------------------------------------------------------------------------
+    # --------------------------------------------------------------------
+    # REMOVE DUPLICATES
+    # --------------------------------------------------------------------
+
+    unique_matches = {}
+
+    for person in matches:
+
+        person_id = person.get("id")
+
+        if not person_id:
+            continue
+
+        unique_matches[person_id] = person
+
+    matches = list(
+        unique_matches.values()
+    )
+
+    # --------------------------------------------------------------------
+    # SORT BY TMDB POPULARITY
+    # --------------------------------------------------------------------
+
+    matches.sort(
+        key=lambda person: (
+            person.get(
+                "_spotlight_popularity",
+                0
+            ),
+            person.get(
+                "popularity",
+                0
+            ),
+        ),
+        reverse=True
+    )
+
+    # Select the strongest birthday personality.
+    selected_person = matches[0]
+
+    # Remove our internal helper field before returning JSON.
+    selected_person.pop(
+        "_spotlight_popularity",
+        None
+    )
+
+    # --------------------------------------------------------------------
+    # FETCH FULL FILMOGRAPHY
+    # --------------------------------------------------------------------
 
     credits, credit_error = tmdb(
         f"/person/{selected_person['id']}/combined_credits",
@@ -700,10 +828,14 @@ def get_birthday_spotlight():
         TMDB_DETAIL_CACHE_TTL
     )
 
-    if not credit_error:
+    if not credit_error and credits:
         selected_person[
             "combined_credits"
         ] = credits
+
+    # --------------------------------------------------------------------
+    # RETURN BIRTHDAY SPOTLIGHT
+    # --------------------------------------------------------------------
 
     return jsonify({
         "spotlight": selected_person

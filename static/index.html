@@ -6,190 +6,728 @@
     <title>PowerFlicks — Stream & Discover Movies</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
-    <!-- HEADER SECTION -->
+
+    <!-- ================================================================
+         HEADER SECTION
+         ================================================================ -->
     <header class="header">
         <div class="header-container">
-            <a href="#" class="brand" id="brand-logo" aria-label="PowerFlicks Home">
-                <!-- PROTECTED LOGO ARTWORK: Keep og-eyes.png behind wordmark -->
-                <span class="brand-art" aria-hidden="true"></span>
-                <span class="brand-wordmark">Power<span>Flicks</span></span>
+
+            <!-- PowerFlicks Logo -->
+            <a
+                href="#"
+                class="brand"
+                id="brand-logo"
+                aria-label="PowerFlicks Home"
+            >
+                <!-- PROTECTED LOGO ARTWORK:
+                     Keep og-eyes.png behind the PowerFlicks wordmark -->
+                <span
+                    class="brand-art"
+                    aria-hidden="true"
+                ></span>
+
+                <!-- Foreground PowerFlicks wordmark -->
+                <span class="brand-wordmark">
+                    Power<span>Flicks</span>
+                </span>
             </a>
 
-            <nav class="main-nav" aria-label="Main Navigation">
-                <button class="nav-link selected" data-list="popular">Popular</button>
-                <button class="nav-link" data-list="top_rated">Top Rated</button>
-                <button class="nav-link" data-list="now_playing">Now Playing</button>
-                <button class="nav-link" data-list="upcoming">Upcoming</button>
-                <button class="nav-link" id="watchlist-button">
-                    My List (<span id="watchlist-count">0</span>)
+            <!-- Main Navigation -->
+            <nav
+                class="main-nav"
+                aria-label="Main Navigation"
+            >
+                <button
+                    class="nav-link selected"
+                    data-list="popular"
+                >
+                    Popular
+                </button>
+
+                <button
+                    class="nav-link"
+                    data-list="top_rated"
+                >
+                    Top Rated
+                </button>
+
+                <button
+                    class="nav-link"
+                    data-list="now_playing"
+                >
+                    Now Playing
+                </button>
+
+                <button
+                    class="nav-link"
+                    data-list="upcoming"
+                >
+                    Upcoming
+                </button>
+
+                <button
+                    class="nav-link"
+                    id="watchlist-button"
+                >
+                    My List
+                    (<span id="watchlist-count">0</span>)
                 </button>
             </nav>
 
+            <!-- Search -->
             <div class="header-actions">
                 <div class="search-box">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+
+                    <svg
+                        class="search-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <circle
+                            cx="11"
+                            cy="11"
+                            r="8"
+                        ></circle>
+
+                        <line
+                            x1="21"
+                            y1="21"
+                            x2="16.65"
+                            y2="16.65"
+                        ></line>
                     </svg>
-                    <input type="search" id="search" placeholder="Search movies, actors, directors..." aria-label="Search movies and people">
+
+                    <input
+                        type="search"
+                        id="search"
+                        placeholder="Search movies, actors, directors..."
+                        aria-label="Search movies and people"
+                    >
+
                 </div>
             </div>
+
         </div>
     </header>
 
+
+    <!-- ================================================================
+         MAIN CONTENT
+         ================================================================ -->
     <main class="main-content">
-        <!-- DYNAMIC HERO CAROUSEL -->
-        <section class="spotlight-panel hero-carousel" id="spotlight-panel" aria-label="Hero Showcase">
-            <div class="spotlight-backdrop" id="spotlight-backdrop"></div>
-            <div class="spotlight-gradient-overlay"></div>
 
-            <!-- Manual Controls -->
-            <button class="carousel-arrow prev-arrow" id="carousel-prev" aria-label="Previous Slide">&lsaquo;</button>
-            <button class="carousel-arrow next-arrow" id="carousel-next" aria-label="Next Slide">&rsaquo;</button>
 
+        <!-- ============================================================
+             DYNAMIC HERO CAROUSEL
+             ============================================================ -->
+        <section
+            class="spotlight-panel hero-carousel"
+            id="spotlight-panel"
+            aria-label="Hero Showcase"
+        >
+
+            <!-- Movie/Person Backdrop -->
+            <div
+                class="spotlight-backdrop"
+                id="spotlight-backdrop"
+                aria-hidden="true"
+            ></div>
+
+            <!-- Dark cinematic overlay for text readability -->
+            <div
+                class="spotlight-gradient-overlay"
+                aria-hidden="true"
+            ></div>
+
+
+            <!-- ========================================================
+                 HERO CAROUSEL MANUAL CONTROLS
+                 ======================================================== -->
+
+            <!-- Previous slide -->
+            <button
+                class="carousel-arrow prev-arrow"
+                id="carousel-prev"
+                type="button"
+                aria-label="Previous Slide"
+            >
+                &lsaquo;
+            </button>
+
+            <!-- Next slide -->
+            <button
+                class="carousel-arrow next-arrow"
+                id="carousel-next"
+                type="button"
+                aria-label="Next Slide"
+            >
+                &rsaquo;
+            </button>
+
+
+            <!-- ========================================================
+                 HERO CONTENT
+                 ======================================================== -->
             <div class="spotlight-inner">
-                <div class="spotlight-tabs" id="spotlight-tabs">
-                    <span class="spotlight-tag" id="spotlight-kicker">FEATURED</span>
+
+
+                <!-- Hero category / feature label -->
+                <div
+                    class="spotlight-tabs"
+                    id="spotlight-tabs"
+                >
+                    <span
+                        class="spotlight-tag"
+                        id="spotlight-kicker"
+                    >
+                        FEATURED
+                    </span>
                 </div>
 
-                <div class="spotlight-details" id="spotlight-details">
-                    <div class="spotlight-meta" id="spotlight-meta">
-                        <span class="spotlight-year" id="spotlight-year">2026</span>
-                        <span class="spotlight-rating" id="spotlight-rating">★ 8.2</span>
+
+                <!-- ====================================================
+                     HERO DETAILS
+                     ==================================================== -->
+                <div
+                    class="spotlight-details"
+                    id="spotlight-details"
+                >
+
+
+                    <!-- ==================================================
+                         MOVIE/PERSON META INFORMATION
+                         ================================================== -->
+                    <div
+                        class="spotlight-meta"
+                        id="spotlight-meta"
+                    >
+
+                        <!-- Movie release year -->
+                        <span
+                            class="spotlight-year"
+                            id="spotlight-year"
+                        ></span>
+
+                        <!-- Movie rating -->
+                        <span
+                            class="spotlight-rating"
+                            id="spotlight-rating"
+                        ></span>
+
+                        <!-- Movie genres -->
+                        <span
+                            class="spotlight-genre"
+                            id="spotlight-genre"
+                        ></span>
+
                     </div>
 
-                    <div class="spotlight-person-wrapper" id="spotlight-person-wrapper" style="display: none;">
-                        <img id="spotlight-person-img" src="" alt="" class="spotlight-person-avatar">
+
+                    <!-- ==================================================
+                         PERSON SPOTLIGHT
+                         ==================================================
+                         Hidden by default.
+                         JavaScript displays this when the current
+                         carousel slide represents a person/actor.
+                         ================================================== -->
+                    <div
+                        class="spotlight-person-wrapper"
+                        id="spotlight-person-wrapper"
+                        hidden
+                    >
+
+                        <!-- Person profile image -->
+                        <img
+                            id="spotlight-person-img"
+                            src=""
+                            alt=""
+                            class="spotlight-person-avatar"
+                        >
+
                         <div>
-                            <h2 class="spotlight-title" id="spotlight-title">Featured Title</h2>
-                            <p class="spotlight-subtitle" id="spotlight-subtitle">Actor • Director</p>
+
+                            <!-- Person name -->
+                            <h2
+                                class="spotlight-title"
+                                id="spotlight-title"
+                            ></h2>
+
+                            <!-- Person profession -->
+                            <p
+                                class="spotlight-subtitle"
+                                id="spotlight-subtitle"
+                            ></p>
+
                         </div>
+
                     </div>
 
-                    <h2 class="spotlight-title-standalone" id="spotlight-movie-title">Featured Title</h2>
 
-                    <p class="spotlight-overview" id="spotlight-overview">
-                        Discover the top trending releases, classic masterpieces, and cinema personalities on PowerFlicks.
+                    <!-- ==================================================
+                         MOVIE SPOTLIGHT
+                         ================================================== -->
+                    <div
+                        class="spotlight-movie-wrapper"
+                        id="spotlight-movie-wrapper"
+                    >
+
+                        <!-- Featured movie title -->
+                        <h2
+                            class="spotlight-title-standalone"
+                            id="spotlight-movie-title"
+                        >
+                            Featured Title
+                        </h2>
+
+                    </div>
+
+
+                    <!-- ==================================================
+                         MOVIE/PERSON OVERVIEW
+                         ================================================== -->
+                    <p
+                        class="spotlight-overview"
+                        id="spotlight-overview"
+                    >
+                        Discover the top trending releases, classic
+                        masterpieces, and cinema personalities on
+                        PowerFlicks.
                     </p>
 
-                    <div class="spotlight-actions" id="spotlight-actions">
-                        <button class="btn btn-primary" id="spotlight-btn-primary">VIEW DETAILS</button>
-                        <button class="btn btn-secondary" id="spotlight-btn-secondary">+ MY LIST</button>
+
+                    <!-- ==================================================
+                         HERO ACTION BUTTONS
+                         ================================================== -->
+                    <div
+                        class="spotlight-actions"
+                        id="spotlight-actions"
+                    >
+
+                        <!-- Main action -->
+                        <button
+                            class="btn btn-primary"
+                            id="spotlight-btn-primary"
+                            type="button"
+                        >
+                            VIEW DETAILS
+                        </button>
+
+                        <!-- Watchlist action -->
+                        <button
+                            class="btn btn-secondary"
+                            id="spotlight-btn-secondary"
+                            type="button"
+                        >
+                            + MY LIST
+                        </button>
+
                     </div>
 
-                    <!-- Slide Indicators -->
-                    <div class="spotlight-dots" id="spotlight-dots"></div>
-                </div>
-            </div>
-        </section>
 
-        <!-- PEOPLE RESULTS SECTION (TRIGGERED IN MULTI-SEARCH MODE) -->
-        <section class="people-section" id="people-section" style="display:none; margin-bottom:40px;">
+                    <!-- ==================================================
+                         HERO SLIDE INDICATORS
+                         ================================================== -->
+                    <div
+                        class="spotlight-dots"
+                        id="spotlight-dots"
+                        aria-label="Featured slides"
+                    ></div>
+
+                </div>
+                <!-- END spotlight-details -->
+
+            </div>
+            <!-- END spotlight-inner -->
+
+        </section>
+        <!-- END DYNAMIC HERO CAROUSEL -->
+
+
+        <!-- ============================================================
+             PEOPLE RESULTS SECTION
+             Triggered in multi-search mode
+             ============================================================ -->
+        <section
+            class="people-section"
+            id="people-section"
+            style="display:none; margin-bottom:40px;"
+        >
+
             <div class="section-header">
+
                 <div class="heading-wrapper">
-                    <span class="accent-bar" aria-hidden="true"></span>
+
+                    <span
+                        class="accent-bar"
+                        aria-hidden="true"
+                    ></span>
+
                     <div class="heading-text">
                         <h2>People</h2>
                     </div>
+
                 </div>
+
             </div>
-            <div id="people-grid" class="people-grid"></div>
+
+            <div
+                id="people-grid"
+                class="people-grid"
+            ></div>
+
         </section>
 
-        <!-- MAIN MOVIE GRID SECTION -->
+
+        <!-- ============================================================
+             MAIN MOVIE GRID SECTION
+             ============================================================ -->
         <section class="movies-section">
+
+            <!-- Section heading -->
             <div class="section-header">
+
                 <div class="heading-wrapper">
-                    <span class="accent-bar" aria-hidden="true"></span>
+
+                    <span
+                        class="accent-bar"
+                        aria-hidden="true"
+                    ></span>
+
                     <div class="heading-text">
-                        <span id="section-kicker" class="section-kicker">Marquee</span>
-                        <h2 id="heading">Popular Movies</h2>
-                        <span id="status" class="status-tag">Loading...</span>
+
+                        <span
+                            id="section-kicker"
+                            class="section-kicker"
+                        >
+                            Marquee
+                        </span>
+
+                        <h2 id="heading">
+                            Popular Movies
+                        </h2>
+
+                        <span
+                            id="status"
+                            class="status-tag"
+                        >
+                            Loading...
+                        </span>
+
                     </div>
+
                 </div>
+
             </div>
 
-            <div id="movies" class="movies-grid"></div>
-            <nav id="pagination" class="pagination" aria-label="Movie pages"></nav>
+
+            <!-- Dynamic movie cards -->
+            <div
+                id="movies"
+                class="movies-grid"
+            ></div>
+
+
+            <!-- Movie pagination -->
+            <nav
+                id="pagination"
+                class="pagination"
+                aria-label="Movie pages"
+            ></nav>
+
         </section>
 
-        <!-- EDITORIAL SECTION -->
+
+        <!-- ============================================================
+             EDITORIAL SECTION
+             ============================================================ -->
         <section class="editorial-section">
+
             <div class="editorial-grid">
-                <div class="editorial-card" id="spotlight-card">
+
+
+                <!-- Actor Spotlight Card -->
+                <div
+                    class="editorial-card"
+                    id="spotlight-card"
+                >
+
                     <div class="editorial-copy">
-                        <span class="editorial-tag">Actor Spotlight</span>
-                        <h3>Iconic Performances</h3>
-                        <p>Explore award-winning performances and filmographies from legendary actors across decades.</p>
-                        <button class="btn-text" id="spotlight-action">Browse Action Releases &rarr;</button>
+
+                        <span class="editorial-tag">
+                            Actor Spotlight
+                        </span>
+
+                        <h3>
+                            Iconic Performances
+                        </h3>
+
+                        <p>
+                            Explore award-winning performances and
+                            filmographies from legendary actors across
+                            decades.
+                        </p>
+
+                        <button
+                            class="btn-text"
+                            id="spotlight-action"
+                        >
+                            Browse Action Releases &rarr;
+                        </button>
+
                     </div>
+
                 </div>
 
-                <div class="editorial-card" id="story-card">
+
+                <!-- Cinema Story Card -->
+                <div
+                    class="editorial-card"
+                    id="story-card"
+                >
+
                     <div class="editorial-copy">
-                        <span class="editorial-tag">Cinema Story</span>
-                        <h3>Masterpieces & Classics</h3>
-                        <p>Delve into groundbreaking storytelling, masterful direction, and cinema history.</p>
-                        <button class="btn-text" id="story-action">Explore High Rated &rarr;</button>
+
+                        <span class="editorial-tag">
+                            Cinema Story
+                        </span>
+
+                        <h3>
+                            Masterpieces & Classics
+                        </h3>
+
+                        <p>
+                            Delve into groundbreaking storytelling,
+                            masterful direction, and cinema history.
+                        </p>
+
+                        <button
+                            class="btn-text"
+                            id="story-action"
+                        >
+                            Explore High Rated &rarr;
+                        </button>
+
                     </div>
+
                 </div>
+
             </div>
+
         </section>
+
     </main>
 
-    <!-- FOOTER SECTION -->
+
+    <!-- ================================================================
+         FOOTER SECTION
+         ================================================================ -->
     <footer class="footer">
+
         <div class="footer-container">
+
+
+            <!-- Footer brand -->
             <div class="footer-brand">
-                <span class="brand-wordmark">Power<span>Flicks</span></span>
-                <p>Your ultimate destination for discovering cinema, tracking watchlists, and exploring community reviews.</p>
+
+                <span class="brand-wordmark">
+                    Power<span>Flicks</span>
+                </span>
+
+                <p>
+                    Your ultimate destination for discovering cinema,
+                    tracking watchlists, and exploring community reviews.
+                </p>
+
             </div>
+
+
+            <!-- Footer navigation -->
             <div class="footer-links">
+
+
+                <!-- Navigation column -->
                 <div class="footer-column">
-                    <h4>Navigation</h4>
+
+                    <h4>
+                        Navigation
+                    </h4>
+
                     <ul>
-                        <li><a href="#" class="footer-nav-link" data-list="popular">Popular Movies</a></li>
-                        <li><a href="#" class="footer-nav-link" data-list="top_rated">Top Rated</a></li>
-                        <li><a href="#" class="footer-nav-link" data-list="now_playing">Now Playing</a></li>
-                        <li><a href="#" class="footer-nav-link" data-list="upcoming">Coming Soon</a></li>
+
+                        <li>
+                            <a
+                                href="#"
+                                class="footer-nav-link"
+                                data-list="popular"
+                            >
+                                Popular Movies
+                            </a>
+                        </li>
+
+                        <li>
+                            <a
+                                href="#"
+                                class="footer-nav-link"
+                                data-list="top_rated"
+                            >
+                                Top Rated
+                            </a>
+                        </li>
+
+                        <li>
+                            <a
+                                href="#"
+                                class="footer-nav-link"
+                                data-list="now_playing"
+                            >
+                                Now Playing
+                            </a>
+                        </li>
+
+                        <li>
+                            <a
+                                href="#"
+                                class="footer-nav-link"
+                                data-list="upcoming"
+                            >
+                                Coming Soon
+                            </a>
+                        </li>
+
                     </ul>
+
                 </div>
+
+
+                <!-- Collection column -->
                 <div class="footer-column">
-                    <h4>Collection</h4>
+
+                    <h4>
+                        Collection
+                    </h4>
+
                     <ul>
-                        <li><a href="#" id="footer-watchlist-link">My List</a></li>
-                        <li><a href="#" id="footer-search-link">Search Catalog</a></li>
+
+                        <li>
+                            <a
+                                href="#"
+                                id="footer-watchlist-link"
+                            >
+                                My List
+                            </a>
+                        </li>
+
+                        <li>
+                            <a
+                                href="#"
+                                id="footer-search-link"
+                            >
+                                Search Catalog
+                            </a>
+                        </li>
+
                     </ul>
+
                 </div>
+
             </div>
+
         </div>
+
+
+        <!-- Footer copyright -->
         <div class="footer-bottom">
-            <p>&copy; 2026 PowerFlicks. Powered by TMDB API.</p>
+
+            <p>
+                &copy; 2026 PowerFlicks. Powered by TMDB API.
+            </p>
+
         </div>
+
     </footer>
 
-    <!-- MOVIE & PERSON DETAIL MODAL DIALOG -->
-    <dialog id="modal" class="modal">
-        <button class="close" aria-label="Close dialog">&times;</button>
-        <div id="modal-content" class="modal-content"></div>
+
+    <!-- ================================================================
+         MOVIE & PERSON DETAIL MODAL DIALOG
+         ================================================================ -->
+    <dialog
+        id="modal"
+        class="modal"
+    >
+
+        <!-- Close modal -->
+        <button
+            class="close"
+            aria-label="Close dialog"
+        >
+            &times;
+        </button>
+
+        <!-- Dynamic modal content -->
+        <div
+            id="modal-content"
+            class="modal-content"
+        ></div>
+
     </dialog>
 
-    <!-- MOVIE CARD TEMPLATE -->
+
+    <!-- ================================================================
+         MOVIE CARD TEMPLATE
+         Used by app.js to create movie cards dynamically.
+         ================================================================ -->
     <template id="card-template">
+
         <article class="card">
+
+            <!-- Movie poster -->
             <div class="poster">
-                <img src="" alt="" loading="lazy">
-                <span class="score">★ 0.0</span>
+
+                <img
+                    src=""
+                    alt=""
+                    loading="lazy"
+                >
+
+                <!-- TMDB rating -->
+                <span class="score">
+                    ★ 0.0
+                </span>
+
             </div>
+
+
+            <!-- Movie information -->
             <div class="card-copy">
+
                 <h3></h3>
+
                 <p></p>
-                <button class="save" type="button">+ My List</button>
+
+                <!-- Save to My List -->
+                <button
+                    class="save"
+                    type="button"
+                >
+                    + My List
+                </button>
+
             </div>
+
         </article>
+
     </template>
 
+
+    <!-- ================================================================
+         JAVASCRIPT
+         ================================================================ -->
     <script src="/static/app.js"></script>
+
 </body>
 </html>

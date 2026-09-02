@@ -1,24 +1,36 @@
 /* ============================================================================
    POWERFLICKS - CINEMATIC RED & BLACK THEME
+   Movie-detail redesign inspired by IMDb's information hierarchy.
+
    ============================================================================ */
 
 :root {
     --bg-dark: #0a0c10;
-    --bg-card: #121620;
-    --bg-elevated: #1a202c;
+    --bg-card: #10141c;
+    --bg-elevated: #171c26;
+    --bg-soft: rgba(255, 255, 255, 0.045);
+
     --brand-red: #e50914;
     --brand-red-hover: #f40612;
+
     --text-primary: #ffffff;
-    --text-secondary: #9ca3af;
-    --text-muted: #6b7280;
+    --text-secondary: #b4bac5;
+    --text-muted: #7d8593;
+
     --gold: #fbbf24;
+
     --border-color: rgba(255, 255, 255, 0.08);
-    --border-highlight: rgba(229, 9, 20, 0.4);
+    --border-soft: rgba(255, 255, 255, 0.055);
+    --border-highlight: rgba(229, 9, 20, 0.45);
+
     --radius-sm: 6px;
     --radius-md: 10px;
-    --radius-lg: 16px;
+    --radius-lg: 18px;
+
     --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+    --shadow-modal: 0 30px 90px rgba(0, 0, 0, 0.78);
 }
+
 
 /* ============================================================================
    RESET
@@ -30,6 +42,11 @@
     box-sizing: border-box;
 }
 
+html {
+    background: var(--bg-dark);
+    scroll-behavior: smooth;
+}
+
 body {
     background-color: var(--bg-dark);
     color: var(--text-primary);
@@ -37,7 +54,24 @@ body {
         Arial, sans-serif;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+img {
+    max-width: 100%;
+}
+
 
 /* ============================================================================
    1. HEADER & LOGO
@@ -47,63 +81,89 @@ body {
     position: sticky;
     top: 0;
     z-index: 100;
+
     background: rgba(10, 12, 16, 0.92);
+
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
     border-bottom: 1px solid var(--border-color);
 }
 
 .header-container {
     max-width: 1320px;
     margin: 0 auto;
+
     padding: 16px 24px;
+
     display: flex;
     align-items: center;
     justify-content: space-between;
+
     gap: 24px;
 }
+
 
 /* Parent container for layered logo artwork */
 
 .brand {
     position: relative;
+
     display: inline-flex;
     align-items: center;
     justify-content: center;
+
     text-decoration: none;
+
     padding: 6px 14px;
 }
+
 
 /* Background image artwork */
 
 .brand-art {
     position: absolute;
+
     left: 50%;
     top: 50%;
+
     transform: translate(-50%, -50%);
+
     width: 190px;
     height: 95px;
+
     background: url("/static/images/og-eyes.png") center / contain no-repeat;
+
     opacity: 0.85;
+
     z-index: 1;
+
     pointer-events: none;
 }
+
 
 /* Foreground wordmark */
 
 .brand-wordmark {
     position: relative;
     z-index: 2;
+
     font-size: 1.6rem;
     font-weight: 900;
+
     letter-spacing: -0.5px;
+
     color: #ffffff;
+
     text-transform: uppercase;
+
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
 }
 
 .brand-wordmark span {
     color: var(--brand-red);
 }
+
 
 .main-nav {
     display: flex;
@@ -114,13 +174,21 @@ body {
 .nav-link {
     background: none;
     border: none;
+
     color: var(--text-secondary);
+
     font-size: 1.08rem;
     font-weight: 600;
+
     cursor: pointer;
+
     padding: 6px 0;
+
     position: relative;
-    transition: color 0.2s ease, transform 0.15s ease;
+
+    transition:
+        color 0.2s ease,
+        transform 0.15s ease;
 }
 
 .nav-link:hover {
@@ -134,14 +202,20 @@ body {
 
 .nav-link.selected::after {
     content: "";
+
     position: absolute;
+
     bottom: -3px;
     left: 0;
     right: 0;
+
     height: 2.5px;
+
     background-color: var(--brand-red);
+
     border-radius: 2px;
 }
+
 
 .header-actions {
     display: flex;
@@ -150,35 +224,52 @@ body {
 
 .search-box {
     position: relative;
+
     display: flex;
     align-items: center;
 }
 
 .search-icon {
     position: absolute;
+
     left: 12px;
+
     width: 16px;
     height: 16px;
+
     color: var(--text-muted);
+
+    pointer-events: none;
 }
 
 .search-box input {
     background: rgba(255, 255, 255, 0.05);
+
     border: 1px solid var(--border-color);
+
     border-radius: 20px;
+
     padding: 8px 14px 8px 36px;
+
     color: #fff;
+
     font-size: 0.9rem;
+
     width: 190px;
+
     transition: all 0.2s ease;
 }
 
 .search-box input:focus {
     outline: none;
+
     width: 250px;
+
     border-color: var(--brand-red);
+
     background: rgba(0, 0, 0, 0.4);
 }
+
 
 /* ============================================================================
    2. MAIN CONTENT LAYOUT
@@ -186,18 +277,27 @@ body {
 
 .main-content {
     max-width: 1320px;
+
     margin: 0 auto;
+
     padding: 24px 24px 60px;
 }
 
+
 .btn {
     padding: 10px 20px;
+
     border-radius: var(--radius-sm);
+
     font-size: 0.9rem;
     font-weight: 600;
+
     cursor: pointer;
+
     border: none;
+
     transition: all 0.2s ease;
+
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -210,12 +310,15 @@ body {
 
 .btn-primary:hover {
     background: var(--brand-red-hover);
+
     transform: translateY(-1px);
 }
 
 .btn-secondary {
     background: rgba(255, 255, 255, 0.08);
+
     color: #fff;
+
     border: 1px solid var(--border-color);
 }
 
@@ -223,126 +326,211 @@ body {
     background: rgba(255, 255, 255, 0.15);
 }
 
+
 /* ============================================================================
    3. HERO / DYNAMIC MOVIE PANEL
    ============================================================================ */
 
 .hero-carousel {
     position: relative;
+
     user-select: none;
 }
 
 .spotlight-panel {
     position: relative;
-    margin-bottom: 40px;
+
+    margin-bottom: 48px;
+
     border-radius: var(--radius-lg);
+
     overflow: hidden;
-    min-height: 380px;
+
+    min-height: 460px;
+
     background-color: var(--bg-card);
+
     border: 1px solid var(--border-color);
+
     display: flex;
     align-items: center;
 }
 
 .spotlight-backdrop {
     position: absolute;
+
     inset: 0;
+
     background-size: cover;
-    background-position: center 20%;
+    background-position: center;
     background-repeat: no-repeat;
-    transition: background-image 0.5s ease-in-out;
+
+    transform: scale(1.02);
+
+    transition:
+        opacity 0.45s ease,
+        transform 0.7s ease;
+}
+
+.spotlight-panel.is-changing .spotlight-backdrop {
+    opacity: 0;
+
+    transform: scale(1.05);
 }
 
 .spotlight-gradient-overlay {
     position: absolute;
+
     inset: 0;
-    background: linear-gradient(
-        90deg,
-        #0a0c10 0%,
-        rgba(10, 12, 16, 0.92) 45%,
-        rgba(10, 12, 16, 0.3) 100%
-    );
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(10, 12, 16, 0.98) 0%,
+            rgba(10, 12, 16, 0.88) 35%,
+            rgba(10, 12, 16, 0.52) 65%,
+            rgba(10, 12, 16, 0.15) 100%
+        ),
+        linear-gradient(
+            0deg,
+            rgba(10, 12, 16, 0.75) 0%,
+            transparent 45%
+        );
 }
 
 .spotlight-inner {
     position: relative;
+
     z-index: 2;
-    padding: 40px;
-    max-width: 650px;
+
+    padding: 56px;
+
+    width: 100%;
+
+    max-width: 760px;
 }
 
 .spotlight-tabs {
     display: flex;
+
     gap: 16px;
+
     margin-bottom: 16px;
 }
 
 .spotlight-tab {
     background: none;
+
     border: none;
+
     color: var(--text-muted);
+
     font-size: 0.8rem;
     font-weight: 700;
+
     letter-spacing: 1px;
+
     cursor: pointer;
+
     padding-bottom: 4px;
 }
 
 .spotlight-tab.active {
     color: var(--brand-red);
+
     border-bottom: 2px solid var(--brand-red);
 }
 
 .spotlight-tag {
     font-size: 0.78rem;
+
     font-weight: 800;
+
     letter-spacing: 1.5px;
+
     color: var(--brand-red);
+
     text-transform: uppercase;
+
     margin-bottom: 8px;
 }
 
 .spotlight-meta {
     display: flex;
+
     gap: 12px;
+
     font-size: 0.85rem;
+
     margin-bottom: 8px;
 }
 
 .spotlight-rating {
     color: var(--gold);
+
     font-weight: 700;
+}
+
+.spotlight-genre {
+    color: var(--text-secondary);
+
+    font-weight: 600;
+}
+
+.spotlight-meta > span + span::before {
+    content: "•";
+
+    color: var(--text-muted);
+
+    margin-right: 12px;
 }
 
 .spotlight-title {
     font-size: 2rem;
+
     font-weight: 800;
+
     line-height: 1.2;
+
     margin-bottom: 12px;
 }
 
 .spotlight-title-standalone {
-    font-size: 2.2rem;
-    font-weight: 800;
-    line-height: 1.15;
-    margin-bottom: 12px;
+    font-size: 3rem;
+
+    font-weight: 850;
+
+    line-height: 1.05;
+
+    letter-spacing: -1px;
+
+    margin-bottom: 16px;
 }
 
 .spotlight-overview {
     color: var(--text-secondary);
+
     font-size: 0.92rem;
+
     margin-bottom: 24px;
+
     display: -webkit-box;
+
     -webkit-line-clamp: 3;
+
     -webkit-box-orient: vertical;
+
     overflow: hidden;
 }
 
 .spotlight-actions {
     display: flex;
+
     gap: 12px;
+
     margin-bottom: 20px;
 }
+
 
 /* ============================================================================
    HERO CAROUSEL ARROWS
@@ -350,41 +538,66 @@ body {
 
 .carousel-arrow {
     position: absolute;
+
     top: 50%;
+
     transform: translateY(-50%);
+
     z-index: 10;
-    background: rgba(10, 12, 16, 0.6);
+
+    width: 48px;
+    height: 48px;
+
+    background: rgba(10, 12, 16, 0.65);
+
     color: #fff;
-    border: 1px solid var(--border-color);
-    font-size: 2.2rem;
-    width: 44px;
-    height: 44px;
+
+    border: 1px solid rgba(255, 255, 255, 0.14);
+
     border-radius: 50%;
+
+    font-size: 2.4rem;
+
+    line-height: 1;
+
     display: flex;
+
     align-items: center;
     justify-content: center;
+
     cursor: pointer;
-    transition: all 0.2s ease;
-    backdrop-filter: blur(4px);
+
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
 }
 
 .carousel-arrow:hover {
     background: var(--brand-red);
+
     border-color: var(--brand-red);
+
+    transform: translateY(-50%) scale(1.06);
 }
 
 .carousel-arrow:focus-visible {
     outline: 2px solid var(--brand-red);
+
     outline-offset: 3px;
 }
 
 .prev-arrow {
-    left: 16px;
+    left: 6px;
 }
 
 .next-arrow {
-    right: 16px;
+    right: 6px;
 }
+
 
 /* ============================================================================
    HERO CAROUSEL DOTS
@@ -392,19 +605,29 @@ body {
 
 .spotlight-dots {
     display: flex;
-    gap: 6px;
+
+    gap: 7px;
+
     align-items: center;
+
+    margin-top: 8px;
 }
 
 .spotlight-dot {
-    width: 28px;
+    width: 24px;
     height: 4px;
+
     background: rgba(255, 255, 255, 0.25);
+
     border: none;
+
     cursor: pointer;
-    border-radius: 2px;
-    transition: all 0.3s ease;
+
+    border-radius: 4px;
+
     padding: 0;
+
+    transition: all 0.3s ease;
 }
 
 .spotlight-dot:hover {
@@ -412,9 +635,11 @@ body {
 }
 
 .spotlight-dot[aria-current="true"] {
+    width: 42px;
+
     background: var(--brand-red);
-    width: 40px;
 }
+
 
 /* ============================================================================
    HERO PERSON SPOTLIGHT
@@ -422,24 +647,33 @@ body {
 
 .spotlight-person-wrapper {
     display: flex;
+
     gap: 20px;
+
     align-items: center;
+
     margin: 12px 0 20px;
 }
 
 .spotlight-person-avatar {
     width: 90px;
     height: 90px;
+
     border-radius: 50%;
+
     object-fit: cover;
+
     border: 2px solid var(--brand-red);
 }
 
 .spotlight-subtitle {
     color: var(--brand-red);
+
     font-size: 0.9rem;
+
     font-weight: 600;
 }
+
 
 /* ============================================================================
    4. SECTION HEADINGS & ACCENTS
@@ -451,42 +685,57 @@ body {
 
 .heading-wrapper {
     display: flex;
+
     align-items: center;
+
     gap: 12px;
 }
 
 .accent-bar {
     width: 4px;
     height: 24px;
+
     background-color: var(--brand-red);
+
     border-radius: 2px;
 }
 
 .heading-text {
     display: flex;
+
     align-items: baseline;
+
     gap: 12px;
 }
 
 .section-kicker {
     font-size: 0.75rem;
+
     text-transform: uppercase;
+
     color: var(--brand-red);
+
     font-weight: 700;
+
     letter-spacing: 1px;
 }
 
 .heading-text h2 {
     font-size: 1.5rem;
+
     font-weight: 700;
+
     text-transform: uppercase;
+
     letter-spacing: 0.5px;
 }
 
 .status-tag {
     font-size: 0.85rem;
+
     color: var(--text-muted);
 }
+
 
 /* ============================================================================
    5. MOVIE GRID & CARDS
@@ -494,17 +743,26 @@ body {
 
 .movies-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+
+    grid-template-columns:
+        repeat(auto-fill, minmax(180px, 1fr));
+
     gap: 28px 18px;
 }
 
 .card {
     background: var(--bg-card);
+
     border-radius: var(--radius-md);
+
     overflow: hidden;
+
     border: 1px solid var(--border-color);
+
     display: flex;
+
     flex-direction: column;
+
     transition:
         transform 0.2s ease,
         border-color 0.2s ease,
@@ -513,89 +771,134 @@ body {
 
 .card:hover {
     transform: translateY(-4px);
+
     border-color: var(--border-highlight);
+
     box-shadow: var(--shadow-soft);
 }
 
 .poster {
     position: relative;
+
     aspect-ratio: 2 / 3;
+
     background: #172033;
+
     overflow: hidden;
+
     cursor: pointer;
 }
 
 .poster img {
     width: 100%;
     height: 100%;
+
     object-fit: cover;
+
     display: block;
 }
 
 .score {
     position: absolute;
+
     top: 8px;
     left: 8px;
+
     background: rgba(10, 12, 16, 0.85);
+
     backdrop-filter: blur(4px);
+
     color: var(--gold);
+
     font-size: 0.75rem;
+
     font-weight: 700;
+
     padding: 3px 7px;
+
     border-radius: 4px;
+
     border: 1px solid rgba(251, 191, 36, 0.3);
 }
 
 .card-copy {
     padding: 12px;
+
     display: flex;
+
     flex-direction: column;
+
     flex-grow: 1;
 }
 
 .card-copy h3 {
     font-size: 0.95rem;
+
     font-weight: 600;
+
     line-height: 1.3;
+
     margin-bottom: 4px;
+
     display: -webkit-box;
+
     -webkit-line-clamp: 2;
+
     -webkit-box-orient: vertical;
+
     overflow: hidden;
+
     min-height: 2.5em;
 }
 
 .card-copy p {
     font-size: 0.8rem;
+
     color: var(--text-muted);
+
     margin-bottom: 12px;
 }
 
 .card .save {
     margin-top: auto;
+
     width: 100%;
+
     padding: 6px 10px;
+
     background: rgba(255, 255, 255, 0.04);
+
     border: 1px solid var(--border-color);
+
     color: var(--text-secondary);
+
     border-radius: var(--radius-sm);
+
     font-size: 0.8rem;
+
     font-weight: 500;
+
     cursor: pointer;
+
     transition: all 0.2s ease;
 }
 
 .card .save:hover {
     background: rgba(229, 9, 20, 0.15);
+
     border-color: var(--brand-red);
+
     color: #fff;
 }
 
 .card .save.active {
     background: rgba(229, 9, 20, 0.2);
+
     border-color: var(--brand-red);
+
     color: #fff;
 }
+
 
 /* ============================================================================
    LOADING SKELETON
@@ -603,13 +906,17 @@ body {
 
 .skeleton-card {
     height: 340px;
-    background: linear-gradient(
-        90deg,
-        #121620 25%,
-        #1a202c 50%,
-        #121620 75%
-    );
+
+    background:
+        linear-gradient(
+            90deg,
+            #121620 25%,
+            #1a202c 50%,
+            #121620 75%
+        );
+
     background-size: 200% 100%;
+
     animation: skeleton-wave 1.5s infinite;
 }
 
@@ -623,23 +930,32 @@ body {
     }
 }
 
+
 /* ============================================================================
    PAGINATION
    ============================================================================ */
 
 .pagination {
     display: flex;
+
     justify-content: center;
+
     gap: 8px;
+
     margin-top: 36px;
 }
 
 .pagination button {
     background: var(--bg-card);
+
     border: 1px solid var(--border-color);
+
     color: var(--text-primary);
+
     padding: 8px 14px;
+
     border-radius: var(--radius-sm);
+
     cursor: pointer;
 }
 
@@ -649,13 +965,16 @@ body {
 
 .pagination button:disabled {
     opacity: 0.5;
+
     cursor: not-allowed;
 }
 
 .pagination button[aria-current="page"] {
     background: var(--brand-red);
+
     border-color: var(--brand-red);
 }
+
 
 /* ============================================================================
    6. PEOPLE SEARCH GRID & PROFILE MODAL
@@ -663,19 +982,30 @@ body {
 
 .people-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+
+    grid-template-columns:
+        repeat(auto-fill, minmax(220px, 1fr));
+
     gap: 20px;
 }
 
 .person-card {
     background: var(--bg-card);
+
     border: 1px solid var(--border-color);
+
     border-radius: var(--radius-md);
+
     padding: 16px;
+
     display: flex;
+
     align-items: center;
+
     gap: 16px;
+
     cursor: pointer;
+
     transition:
         transform 0.2s ease,
         border-color 0.2s ease;
@@ -683,76 +1013,121 @@ body {
 
 .person-card:hover {
     transform: translateY(-3px);
+
     border-color: var(--brand-red);
 }
 
 .person-avatar {
     width: 60px;
     height: 60px;
+
     border-radius: 50%;
+
     object-fit: cover;
+
     background: #172033;
+
     flex-shrink: 0;
 }
 
 .person-info h3 {
     font-size: 1rem;
+
     font-weight: 700;
+
     color: #fff;
+
     margin-bottom: 2px;
 }
 
 .person-info p {
     font-size: 0.8rem;
+
     color: var(--brand-red);
+
     font-weight: 600;
 }
 
 .profile-section-title {
     font-size: 0.95rem;
+
     text-transform: uppercase;
+
     letter-spacing: 1px;
+
     color: var(--text-muted);
+
     margin: 20px 0 12px;
 }
 
 .mini-credit-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+
+    grid-template-columns:
+        repeat(auto-fill, minmax(130px, 1fr));
+
     gap: 12px;
 }
 
 .mini-credit-card {
     background: rgba(255, 255, 255, 0.04);
+
     border: 1px solid var(--border-color);
+
     border-radius: var(--radius-sm);
+
     padding: 8px;
+
     cursor: pointer;
-    transition: background 0.2s;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
 }
 
 .mini-credit-card:hover {
     background: rgba(229, 9, 20, 0.15);
+
     border-color: var(--brand-red);
+
+    transform: translateY(-2px);
 }
 
 .mini-credit-card img {
+    display: block;
+
     width: 100%;
+
     aspect-ratio: 2 / 3;
+
     object-fit: cover;
+
     border-radius: 4px;
+
     margin-bottom: 6px;
+
+    background: #172033;
 }
 
 .mini-credit-card h4 {
-    font-size: 0.82rem;
-    line-height: 1.2;
+    margin: 0;
+
     color: #fff;
+
+    font-size: 0.82rem;
+
+    line-height: 1.2;
+
     display: -webkit-box;
+
     -webkit-line-clamp: 2;
+
     -webkit-box-orient: vertical;
+
     overflow: hidden;
 }
+
 
 /* ============================================================================
    7. EDITORIAL SECTION
@@ -764,48 +1139,67 @@ body {
 
 .editorial-grid {
     display: grid;
+
     grid-template-columns: 1fr 1fr;
+
     gap: 20px;
 }
 
 .editorial-card {
-    background: linear-gradient(
-        135deg,
-        #121620 0%,
-        #1a202c 100%
-    );
+    background:
+        linear-gradient(
+            135deg,
+            #121620 0%,
+            #1a202c 100%
+        );
+
     border: 1px solid var(--border-color);
+
     border-radius: var(--radius-md);
+
     padding: 28px;
 }
 
 .editorial-tag {
     font-size: 0.75rem;
+
     text-transform: uppercase;
+
     color: var(--brand-red);
+
     font-weight: 700;
+
     letter-spacing: 1px;
 }
 
 .editorial-card h3 {
     font-size: 1.25rem;
+
     margin: 6px 0 8px;
 }
 
 .editorial-card p {
     color: var(--text-secondary);
+
     font-size: 0.88rem;
+
     margin-bottom: 16px;
 }
 
 .btn-text {
     background: none;
+
     border: none;
+
     color: var(--brand-red);
+
     font-weight: 600;
+
     font-size: 0.88rem;
+
     cursor: pointer;
 }
+
 
 /* ============================================================================
    8. FOOTER
@@ -813,17 +1207,25 @@ body {
 
 .footer {
     border-top: 1px solid var(--border-color);
+
     background: #08090d;
+
     padding: 48px 24px 24px;
+
     margin-top: 60px;
 }
 
 .footer-container {
     max-width: 1320px;
+
     margin: 0 auto;
+
     display: flex;
+
     justify-content: space-between;
+
     gap: 40px;
+
     margin-bottom: 40px;
 }
 
@@ -833,19 +1235,25 @@ body {
 
 .footer-brand p {
     color: var(--text-muted);
+
     font-size: 0.88rem;
+
     margin-top: 12px;
 }
 
 .footer-links {
     display: flex;
+
     gap: 60px;
 }
 
 .footer-column h4 {
     font-size: 0.9rem;
+
     text-transform: uppercase;
+
     color: #fff;
+
     margin-bottom: 16px;
 }
 
@@ -859,7 +1267,9 @@ body {
 
 .footer-column a {
     color: var(--text-secondary);
+
     text-decoration: none;
+
     font-size: 0.88rem;
 }
 
@@ -869,69 +1279,976 @@ body {
 
 .footer-bottom {
     max-width: 1320px;
+
     margin: 0 auto;
+
     border-top: 1px solid var(--border-color);
+
     padding-top: 24px;
+
     color: var(--text-muted);
+
     font-size: 0.8rem;
+
     text-align: center;
 }
 
+
 /* ============================================================================
-   9. MODAL
+   9. MODAL BASE
    ============================================================================ */
 
 .modal {
+    position: relative;
+
     margin: auto;
+
     padding: 0;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
+
+    width: min(1100px, 94vw);
+
+    max-width: 1100px;
+
+    max-height: 92vh;
+
+    background: #10141c;
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
     border-radius: var(--radius-lg);
-    color: #fff;
-    max-width: 700px;
-    width: 90%;
-    box-shadow: var(--shadow-soft);
+
+    color: var(--text-primary);
+
+    overflow: hidden;
+
+    box-shadow: var(--shadow-modal);
 }
 
 .modal::backdrop {
-    background: rgba(0, 0, 0, 0.8);
-}
+    background: rgba(0, 0, 0, 0.82);
 
-.close {
-    position: absolute;
-    top: 12px;
-    right: 16px;
-    background: none;
-    border: none;
-    color: #fff;
-    font-size: 1.8rem;
-    cursor: pointer;
-    z-index: 10;
+    backdrop-filter: blur(10px);
+
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .modal-content {
-    padding: 24px;
+    max-height: 92vh;
+
+    overflow-y: auto;
+
+    padding: 0;
+
+    scrollbar-width: thin;
+
+    scrollbar-color:
+        rgba(255, 255, 255, 0.2)
+        transparent;
 }
 
+.modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.18);
+
+    border-radius: 10px;
+}
+
+
 /* ============================================================================
-   10. RESPONSIVE BREAKPOINTS
+   CLOSE BUTTON
+   ============================================================================ */
+
+.close {
+    position: absolute;
+
+    top: 16px;
+    right: 18px;
+
+    z-index: 50;
+
+    width: 40px;
+    height: 40px;
+
+    display: grid;
+
+    place-items: center;
+
+    padding: 0;
+
+    background: rgba(0, 0, 0, 0.62);
+
+    border: 1px solid rgba(255, 255, 255, 0.15);
+
+    border-radius: 50%;
+
+    color: #fff;
+
+    font-size: 1.4rem;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    backdrop-filter: blur(8px);
+
+    -webkit-backdrop-filter: blur(8px);
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.close:hover {
+    background: var(--brand-red);
+
+    border-color: var(--brand-red);
+
+    transform: scale(1.05);
+}
+
+
+/* ============================================================================
+   10. MOVIE DETAIL
+   ============================================================================ */
+
+
+/* --------------------------------------------------------------------------
+   CINEMATIC MOVIE HERO
+   -------------------------------------------------------------------------- */
+
+.detail-hero {
+    position: relative;
+
+    min-height: 390px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: flex-end;
+
+    background-size: cover;
+
+    background-position: center;
+
+    background-repeat: no-repeat;
+
+    overflow: hidden;
+}
+
+
+/*
+   IMPORTANT:
+   The backdrop fades into the exact same surface as the detail content.
+   This prevents the "image inside a separate box" appearance.
+*/
+
+.detail-hero::after {
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(10, 12, 16, 0.04) 0%,
+            rgba(10, 12, 16, 0.10) 30%,
+            rgba(10, 12, 16, 0.46) 55%,
+            rgba(16, 20, 28, 0.88) 78%,
+            #10141c 100%
+        );
+
+    pointer-events: none;
+}
+
+.detail-hero > * {
+    position: relative;
+
+    z-index: 2;
+}
+
+
+/* --------------------------------------------------------------------------
+   DETAIL CONTENT
+   -------------------------------------------------------------------------- */
+
+.detail {
+    position: relative;
+
+    padding: 0 32px 38px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #10141c 0%,
+            #10141c 85%,
+            #0f131a 100%
+        );
+}
+
+.detail h2 {
+    margin: 0 0 8px;
+
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+
+    font-weight: 850;
+
+    line-height: 1.08;
+
+    letter-spacing: -0.5px;
+}
+
+.detail .genres {
+    margin-bottom: 14px;
+
+    color: var(--brand-red);
+
+    font-size: 0.88rem;
+
+    font-weight: 700;
+}
+
+.detail-overview {
+    max-width: 850px;
+
+    margin: 0 0 22px;
+
+    color: var(--text-secondary);
+
+    font-size: 0.94rem;
+
+    line-height: 1.7;
+}
+
+
+/* --------------------------------------------------------------------------
+   OPTIONAL MOVIE INFORMATION ROWS
+
+   These style Director / Writer / Stars if your existing HTML contains them.
+   They don't affect functionality if those elements aren't present.
+   -------------------------------------------------------------------------- */
+
+.detail-credit,
+.detail-credits,
+.detail-meta-row {
+    display: flex;
+
+    align-items: baseline;
+
+    gap: 12px;
+
+    padding: 10px 0;
+
+    border-top: 1px solid var(--border-soft);
+
+    color: var(--text-secondary);
+
+    font-size: 0.88rem;
+}
+
+.detail-credit strong,
+.detail-credits strong,
+.detail-meta-row strong {
+    min-width: 72px;
+
+    color: var(--text-primary);
+}
+
+.detail-credit a,
+.detail-credits a,
+.detail-meta-row a {
+    color: #55a8ff;
+
+    text-decoration: none;
+}
+
+.detail-credit a:hover,
+.detail-credits a:hover,
+.detail-meta-row a:hover {
+    text-decoration: underline;
+}
+
+
+/* ============================================================================
+   DETAIL SECTIONS
+   ============================================================================ */
+
+.detail-section-title,
+.profile-section-title {
+    margin: 32px 0 15px;
+
+    font-size: 1rem;
+
+    font-weight: 800;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1px;
+
+    color: var(--text-primary);
+}
+
+.detail-section-title {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+.detail-section-title::before {
+    content: "";
+
+    width: 4px;
+
+    height: 20px;
+
+    flex: 0 0 auto;
+
+    background: var(--brand-red);
+
+    border-radius: 2px;
+}
+
+
+/* ============================================================================
+   CAST / CREW GRID
+   ============================================================================ */
+
+/*
+   OLD DESIGN:
+   Huge rectangular cards with huge photos.
+
+   NEW DESIGN:
+   Compact IMDb-inspired credits.
+*/
+
+.cast-grid,
+.crew-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 12px 24px;
+}
+
+
+/* --------------------------------------------------------------------------
+   CAST / CREW CARD
+   -------------------------------------------------------------------------- */
+
+.cast-card,
+.crew-card {
+    min-width: 0;
+
+    display: grid;
+
+    grid-template-columns:
+        64px minmax(0, 1fr);
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 6px 0;
+
+    background: transparent;
+
+    border: none;
+
+    border-radius: 0;
+
+    overflow: visible;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.cast-card:hover,
+.crew-card:hover {
+    transform: translateY(-2px);
+
+    opacity: 0.92;
+}
+
+
+/* --------------------------------------------------------------------------
+   CAST / CREW PHOTO
+   -------------------------------------------------------------------------- */
+
+.cast-card img,
+.crew-card img {
+    display: block;
+
+    width: 64px;
+
+    height: 64px;
+
+    aspect-ratio: 1;
+
+    object-fit: cover;
+
+    background: #172033;
+
+    border: 2px solid rgba(255, 255, 255, 0.09);
+
+    border-radius: 50%;
+
+    transition:
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.cast-card:hover img,
+.crew-card:hover img {
+    border-color: rgba(229, 9, 20, 0.65);
+
+    transform: scale(1.04);
+}
+
+
+/* --------------------------------------------------------------------------
+   CAST INFORMATION
+   -------------------------------------------------------------------------- */
+
+.cast-info,
+.crew-info {
+    min-width: 0;
+
+    padding: 0;
+}
+
+.cast-info h4,
+.crew-info h4 {
+    margin: 0;
+
+    color: var(--text-primary);
+
+    font-size: 0.88rem;
+
+    font-weight: 700;
+
+    line-height: 1.25;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+.cast-info p,
+.crew-info p {
+    margin: 3px 0 0;
+
+    color: var(--text-muted);
+
+    font-size: 0.75rem;
+
+    line-height: 1.25;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+
+/* ============================================================================
+   11. PERSON PROFILE
+   ============================================================================ */
+
+.person-profile-header {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 20px;
+
+    margin-bottom: 22px;
+}
+
+.person-profile-photo {
+    width: 130px;
+
+    height: 190px;
+
+    flex-shrink: 0;
+
+    object-fit: cover;
+
+    border-radius: var(--radius-md);
+
+    background: #172033;
+
+    border: 1px solid var(--border-color);
+}
+
+.person-profile-info {
+    min-width: 0;
+}
+
+.person-profile-info h2 {
+    margin: 0 0 6px;
+
+    font-size: 1.8rem;
+
+    font-weight: 800;
+
+    line-height: 1.15;
+}
+
+.person-profile-info .department {
+    margin-bottom: 12px;
+
+    color: var(--brand-red);
+
+    font-size: 0.85rem;
+
+    font-weight: 700;
+}
+
+.person-profile-info .biography {
+    max-width: 720px;
+
+    color: var(--text-secondary);
+
+    font-size: 0.88rem;
+
+    line-height: 1.6;
+}
+
+
+/* ============================================================================
+   EXISTING PERSON CREDIT CARDS
+   ============================================================================ */
+
+.mini-credit-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fill, minmax(130px, 1fr));
+
+    gap: 12px;
+}
+
+.mini-credit-card {
+    background: rgba(255, 255, 255, 0.04);
+
+    border: 1px solid var(--border-color);
+
+    border-radius: var(--radius-sm);
+
+    padding: 8px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.mini-credit-card:hover {
+    background: rgba(229, 9, 20, 0.15);
+
+    border-color: var(--brand-red);
+
+    transform: translateY(-2px);
+}
+
+.mini-credit-card img {
+    display: block;
+
+    width: 100%;
+
+    aspect-ratio: 2 / 3;
+
+    object-fit: cover;
+
+    border-radius: 4px;
+
+    margin-bottom: 6px;
+
+    background: #172033;
+}
+
+.mini-credit-card h4 {
+    margin: 0;
+
+    color: #fff;
+
+    font-size: 0.82rem;
+
+    line-height: 1.2;
+
+    display: -webkit-box;
+
+    -webkit-line-clamp: 2;
+
+    -webkit-box-orient: vertical;
+
+    overflow: hidden;
+}
+
+
+/* ============================================================================
+   12. RATING + REVIEW SECTION
+   ============================================================================ */
+
+.review-section {
+    margin-top: 34px;
+
+    padding-top: 26px;
+
+    border-top: 1px solid var(--border-color);
+}
+
+.review-section-title {
+    margin: 0 0 18px;
+
+    font-size: 1.15rem;
+
+    font-weight: 800;
+
+    letter-spacing: 0.1px;
+}
+
+
+/* ============================================================================
+   STAR RATING INPUT
+   ============================================================================ */
+
+.rating-input {
+    display: flex;
+
+    flex-direction: row-reverse;
+
+    justify-content: flex-end;
+
+    gap: 3px;
+
+    margin-bottom: 18px;
+}
+
+.rating-input input {
+    position: absolute;
+
+    opacity: 0;
+
+    pointer-events: none;
+}
+
+.rating-input label {
+    color: #4b5568;
+
+    font-size: 1.65rem;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        color 0.15s ease,
+        transform 0.15s ease;
+}
+
+.rating-input label:hover,
+.rating-input label:hover ~ label,
+.rating-input input:checked ~ label {
+    color: var(--gold);
+}
+
+.rating-input label:hover {
+    transform: scale(1.1);
+}
+
+
+/* ============================================================================
+   REVIEW FORM
+   ============================================================================ */
+
+.review-form {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 12px;
+
+    margin-bottom: 30px;
+
+    max-width: 760px;
+}
+
+.review-form input,
+.review-form textarea,
+.review-form select {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 11px 13px;
+
+    background: rgba(255, 255, 255, 0.045);
+
+    border: 1px solid rgba(255, 255, 255, 0.10);
+
+    border-radius: 8px;
+
+    color: var(--text-primary);
+
+    font: inherit;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.review-form input::placeholder,
+.review-form textarea::placeholder {
+    color: var(--text-muted);
+}
+
+.review-form input:focus,
+.review-form textarea:focus,
+.review-form select:focus {
+    border-color: var(--brand-red);
+
+    background: rgba(0, 0, 0, 0.25);
+
+    box-shadow:
+        0 0 0 3px rgba(229, 9, 20, 0.12);
+}
+
+.review-form textarea {
+    min-height: 115px;
+
+    resize: vertical;
+}
+
+.review-form button {
+    align-self: flex-start;
+
+    padding: 10px 18px;
+
+    background: var(--brand-red);
+
+    border: none;
+
+    border-radius: var(--radius-sm);
+
+    color: #fff;
+
+    font-size: 0.9rem;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.review-form button:hover {
+    background: var(--brand-red-hover);
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 8px 20px rgba(229, 9, 20, 0.2);
+}
+
+
+/* ============================================================================
+   REVIEW LIST
+   ============================================================================ */
+
+.reviews-list {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 12px;
+
+    max-width: 860px;
+}
+
+.review-card {
+    padding: 15px 16px;
+
+    background: rgba(255, 255, 255, 0.025);
+
+    border: 1px solid var(--border-color);
+
+    border-radius: 9px;
+}
+
+.review-header {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-bottom: 7px;
+}
+
+.review-author {
+    color: var(--text-primary);
+
+    font-size: 0.9rem;
+
+    font-weight: 700;
+}
+
+.review-rating {
+    color: var(--gold);
+
+    font-size: 0.85rem;
+
+    white-space: nowrap;
+}
+
+.review-comment {
+    margin: 0;
+
+    color: var(--text-secondary);
+
+    font-size: 0.86rem;
+
+    line-height: 1.55;
+
+    white-space: pre-wrap;
+}
+
+.review-date {
+    display: block;
+
+    margin-top: 8px;
+
+    color: var(--text-muted);
+
+    font-size: 0.7rem;
+}
+
+
+/* ============================================================================
+   NO REVIEWS
+   ============================================================================ */
+
+.no-reviews {
+    padding: 20px;
+
+    text-align: center;
+
+    color: var(--text-muted);
+
+    border: 1px dashed var(--border-color);
+
+    border-radius: var(--radius-sm);
+}
+
+
+/* ============================================================================
+   OPTIONAL DETAIL ACTIONS
+   ============================================================================ */
+
+.detail-actions {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 10px;
+
+    margin: 20px 0 24px;
+}
+
+.detail-actions .btn {
+    min-height: 40px;
+}
+
+
+/* ============================================================================
+   13. RESPONSIVE — TABLET
+   ============================================================================ */
+
+@media (max-width: 900px) {
+
+    .header-container {
+        gap: 16px;
+    }
+
+    .main-nav {
+        gap: 20px;
+    }
+
+    .movies-grid {
+        grid-template-columns:
+            repeat(auto-fill, minmax(165px, 1fr));
+    }
+
+    .cast-grid,
+    .crew-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .detail {
+        padding-left: 24px;
+
+        padding-right: 24px;
+    }
+}
+
+
+/* ============================================================================
+   14. RESPONSIVE — MOBILE / TABLET
    ============================================================================ */
 
 @media (max-width: 768px) {
+
     .header-container {
         flex-wrap: wrap;
     }
 
     .main-nav {
         order: 3;
+
         width: 100%;
+
         overflow-x: auto;
+
         padding-bottom: 4px;
+
         gap: 20px;
     }
 
     .nav-link {
         font-size: 1rem;
+
+        white-space: nowrap;
     }
 
     .search-box input {
@@ -943,11 +2260,12 @@ body {
     }
 
     .spotlight-panel {
-        min-height: 420px;
+        min-height: 440px;
     }
 
     .spotlight-inner {
         padding: 24px;
+
         max-width: 90%;
     }
 
@@ -961,7 +2279,9 @@ body {
 
     .carousel-arrow {
         width: 38px;
+
         height: 38px;
+
         font-size: 1.8rem;
     }
 
@@ -983,19 +2303,69 @@ body {
 
     .footer-links {
         gap: 30px;
+
         flex-wrap: wrap;
     }
 
     .movies-grid {
-        grid-template-columns: repeat(
-            auto-fill,
-            minmax(145px, 1fr)
-        );
+        grid-template-columns:
+            repeat(auto-fill, minmax(145px, 1fr));
+
         gap: 18px 12px;
+    }
+
+
+    /* ------------------------------------------------------------------------
+       MOVIE DETAIL MODAL — TABLET
+       ------------------------------------------------------------------------ */
+
+    .modal {
+        width: 94vw;
+
+        max-height: 92vh;
+
+        border-radius: 14px;
+    }
+
+    .modal-content {
+        max-height: 92vh;
+    }
+
+    .detail-hero {
+        min-height: 330px;
+    }
+
+    .detail {
+        padding: 0 20px 30px;
+    }
+
+    .detail h2 {
+        font-size:
+            clamp(1.65rem, 6vw, 2.2rem);
+    }
+
+    .cast-grid,
+    .crew-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 10px 18px;
+    }
+
+    .person-profile-photo {
+        width: 105px;
+
+        height: 155px;
     }
 }
 
+
+/* ============================================================================
+   15. RESPONSIVE — SMALL PHONES
+   ============================================================================ */
+
 @media (max-width: 480px) {
+
     .header-container {
         padding: 12px 16px;
     }
@@ -1010,6 +2380,7 @@ body {
 
     .brand-art {
         width: 110px;
+
         height: 55px;
     }
 
@@ -1032,34 +2403,23 @@ body {
 
     .spotlight-inner {
         padding: 22px 20px;
+
         max-width: 100%;
     }
 
     .spotlight-gradient-overlay {
-        background: linear-gradient(
-            180deg,
-            rgba(10, 12, 16, 0.35) 0%,
-            rgba(10, 12, 16, 0.95) 65%,
-            #0a0c10 100%
-        );
-    }
-
-    .carousel-arrow {
-        top: auto;
-        bottom: 20px;
-        transform: none;
-    }
-
-    .prev-arrow {
-        left: 20px;
-    }
-
-    .next-arrow {
-        right: 20px;
+        background:
+            linear-gradient(
+                180deg,
+                rgba(10, 12, 16, 0.35) 0%,
+                rgba(10, 12, 16, 0.95) 65%,
+                #0a0c10 100%
+            );
     }
 
     .spotlight-dots {
         margin-left: 52px;
+
         margin-right: 52px;
     }
 
@@ -1069,11 +2429,13 @@ body {
 
     .spotlight-person-avatar {
         width: 70px;
+
         height: 70px;
     }
 
     .heading-text {
         flex-wrap: wrap;
+
         gap: 6px 10px;
     }
 
@@ -1082,6 +2444,167 @@ body {
     }
 
     .movies-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+
+    /* ------------------------------------------------------------------------
+       MOVIE DETAIL MODAL — SMALL PHONES
+       ------------------------------------------------------------------------ */
+
+    .modal {
+        width: 96vw;
+
+        max-height: 92vh;
+
+        border-radius: var(--radius-md);
+    }
+
+    .detail-hero {
+        min-height: 270px;
+    }
+
+    .detail {
+        padding: 0 16px 24px;
+    }
+
+    .detail h2 {
+        font-size: 1.55rem;
+    }
+
+    .detail-overview {
+        font-size: 0.88rem;
+
+        line-height: 1.6;
+    }
+
+    .detail-credit,
+    .detail-credits,
+    .detail-meta-row {
+        align-items: flex-start;
+
+        gap: 8px;
+
+        flex-direction: column;
+    }
+
+    .detail-credit strong,
+    .detail-credits strong,
+    .detail-meta-row strong {
+        min-width: 0;
+    }
+
+
+    /* ------------------------------------------------------------------------
+       CAST
+       ------------------------------------------------------------------------ */
+
+    .cast-grid,
+    .crew-grid {
+        grid-template-columns: 1fr;
+
+        gap: 8px;
+    }
+
+    .cast-card,
+    .crew-card {
+        grid-template-columns:
+            58px minmax(0, 1fr);
+
+        gap: 11px;
+
+        padding: 5px 0;
+    }
+
+    .cast-card img,
+    .crew-card img {
+        width: 58px;
+
+        height: 58px;
+    }
+
+    .cast-info h4,
+    .crew-info h4 {
+        font-size: 0.86rem;
+    }
+
+    .cast-info p,
+    .crew-info p {
+        font-size: 0.73rem;
+    }
+
+
+    /* ------------------------------------------------------------------------
+       PERSON PROFILE
+       ------------------------------------------------------------------------ */
+
+    .person-profile-header {
+        gap: 14px;
+    }
+
+    .person-profile-photo {
+        width: 90px;
+
+        height: 135px;
+    }
+
+    .person-profile-info h2 {
+        font-size: 1.35rem;
+    }
+
+
+    /* ------------------------------------------------------------------------
+       REVIEWS
+       ------------------------------------------------------------------------ */
+
+    .review-header {
+        align-items: flex-start;
+
+        flex-direction: column;
+
+        gap: 4px;
+    }
+
+    .review-form {
+        max-width: none;
+    }
+
+    .review-form button {
+        width: 100%;
+    }
+
+
+    /* ------------------------------------------------------------------------
+       CLOSE BUTTON
+       ------------------------------------------------------------------------ */
+
+    .close {
+        top: 10px;
+
+        right: 10px;
+
+        width: 36px;
+
+        height: 36px;
+    }
+}
+
+
+/* ============================================================================
+   ACCESSIBILITY / REDUCED MOTION
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before {
+        scroll-behavior: auto !important;
+
+        animation-duration: 0.01ms !important;
+
+        animation-iteration-count: 1 !important;
+
+        transition-duration: 0.01ms !important;
     }
 }
