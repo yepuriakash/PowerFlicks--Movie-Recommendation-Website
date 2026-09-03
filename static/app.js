@@ -794,6 +794,17 @@ function renderReviewStars(rating) {
     return "★".repeat(numericRating) + "☆".repeat(5 - numericRating);
 }
 
+function formatDateLabel(dateString) {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+    });
+}
+
 function renderExistingReviews(reviews) {
     if (!Array.isArray(reviews) || reviews.length === 0) {
         return `
@@ -809,17 +820,36 @@ function renderExistingReviews(reviews) {
             (review) => `
             <article class="review-card">
                 <div class="review-header">
-                    <strong>${esc(review.author || "Anonymous")}</strong>
-                    <span class="review-stars" aria-label="${Number(review.rating) || 0} out of 5 stars">
-                        ${renderReviewStars(review.rating)}
-                    </span>
+                    <div class="review-author-info">
+                        <strong class="review-author-name">${esc(review.author || "Anonymous")}</strong>
+                        <span class="review-stars" aria-label="${Number(review.rating) || 0} out of 5 stars">
+                            ${renderReviewStars(review.rating)}
+                        </span>
+                    </div>
+                    ${review.created_at ? `<span class="review-date-badge">${esc(formatDateLabel(review.created_at))}</span>` : ""}
                 </div>
-                <p class="review-comment">${esc(review.comment || "")}</p>
-                ${review.created_at ? `<small class="review-date">${esc(review.created_at)}</small>` : ""}
+                ${
+                    review.comment || review.content
+                        ? `<p class="review-comment">${esc(review.comment || review.content)}</p>`
+                        : `<p class="review-comment muted-comment"><em>Rating only</em></p>`
+                }
             </article>
         `
         )
         .join("");
+}
+
+async function refreshModalReviews(movieId) {
+    const listContainer = document.querySelector("#modal-reviews-container");
+    if (!listContainer) return;
+
+    try {
+        const data = await api(`/api/reviews/${movieId}`);
+        const reviews = data.reviews || [];
+        listContainer.innerHTML = renderExistingReviews(reviews);
+    } catch (error) {
+        console.error("Failed to refresh reviews", error);
+    }
 }
 
 function setupReviewForm(movieId) {
@@ -859,11 +889,6 @@ function setupReviewForm(movieId) {
             alert("Please select a rating.");
             return;
         }
-        if (!comment) {
-            alert("Please write a review.");
-            commentInput?.focus();
-            return;
-        }
         if (author.length > 50) {
             alert("Your name must be 50 characters or less.");
             return;
@@ -891,7 +916,9 @@ function setupReviewForm(movieId) {
             if (ratingDisplay) ratingDisplay.textContent = "0/5";
 
             updateStarVisualState(0);
-            await detail(movieId);
+
+            // Refreshes only the reviews container inside the open modal
+            await refreshModalReviews(movieId);
         } catch (error) {
             alert(error.message);
         } finally {
@@ -986,7 +1013,7 @@ async function detail(id) {
                     </section>
                     <section class="powerflicks-reviews" style="margin-top:36px;">
                         <div class="profile-section-title">PowerFlicks Reviews</div>
-                        <div class="reviews-list">${reviewsMarkup}</div>
+                        <div id="modal-reviews-container" class="reviews-list">${reviewsMarkup}</div>
                     </section>
                     <section class="write-review-section" style="margin-top:36px;">
                         <div class="profile-section-title">Write a Review</div>
@@ -1012,8 +1039,8 @@ async function detail(id) {
                                 </div>
                             </div>
                             <div class="review-form-field">
-                                <label for="review-comment">Your review</label>
-                                <textarea id="review-comment" name="comment" maxlength="1000" rows="4" placeholder="What did you think about this movie?" required></textarea>
+                                <label for="review-comment">Your review (optional)</label>
+                                <textarea id="review-comment" name="comment" maxlength="1000" rows="4" placeholder="What did you think about this movie? (optional)"></textarea>
                             </div>
                             <button id="review-submit" type="submit" class="btn btn-primary" style="align-self:flex-start;">SUBMIT REVIEW</button>
                         </form>
@@ -1122,6 +1149,7 @@ function applySuggestion(suggestedQuery) {
         searchInput.dispatchEvent(new Event("input"));
     }
 }
+
 // ============================================================================
 // LIVE SEARCH AUTOCOMPLETE DROPDOWN
 // ============================================================================
@@ -1177,7 +1205,6 @@ document.addEventListener("click", (event) => {
         dropdown.hidden = true;
     }
 });
-
 
 // ============================================================================
 // TMDB MULTI-SEARCH ENGINE WITH AUTO-CORRECT

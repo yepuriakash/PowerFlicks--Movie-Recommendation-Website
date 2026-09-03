@@ -801,69 +801,70 @@ def watchlist():
             ok=True
         )
 
-
 # ============================================================================
 # REVIEWS
 # ============================================================================
 
-@app.post(
-    "/api/movies/<int:movie_id>/reviews"
-)
-def post_review(movie_id):
+@app.get("/api/reviews/<int:movie_id>")
+def get_reviews(movie_id):
+    with closing(db()) as connection:
+        rows = connection.execute(
+            """
+            SELECT
+                id,
+                movie_id,
+                device_id,
+                author,
+                rating,
+                comment AS content,
+                created_at
+            FROM reviews
+            WHERE movie_id=?
+            ORDER BY id DESC
+            """,
+            (movie_id,)
+        ).fetchall()
+
+    return jsonify(reviews=[dict(row) for row in rows])
+
+
+@app.post("/api/reviews")
+@app.post("/api/movies/<int:movie_id>/reviews")
+def post_review(movie_id=None):
     user = device_id()
+    body = request.get_json(silent=True) or {}
 
-    body = request.get_json(
-        silent=True
-    ) or {}
+    # Handle movie_id from URL parameter or JSON body payload
+    if movie_id is None:
+        movie_id = body.get("movie_id")
 
-    author = str(
-        body.get(
-            "author",
-            ""
-        )
-    ).strip()
+    if not isinstance(movie_id, int):
+        return jsonify(error="Valid movie_id is required."), 400
 
-    comment = str(
-        body.get(
-            "comment",
-            ""
-        )
-    ).strip()
+    author = str(body.get("author", "Anonymous")).strip() or "Anonymous"
 
-    rating = body.get(
-        "rating"
-    )
+    # Accept 'content' or 'comment' and make text optional (defaulting to empty string)
+    raw_content = body.get("content") if "content" in body else body.get("comment", "")
+    comment = str(raw_content or "").strip()
 
-    if (
-        not user
-        or not author
-        or not comment
-        or not isinstance(
-            rating,
-            int
-        )
-        or not 1 <= rating <= 5
-    ):
-        return jsonify(
-            error=(
-                "Provide a device ID, "
-                "name, 1–5 rating, "
-                "and comment."
-            )
-        ), 400
+    rating = body.get("rating")
+    try:
+        rating_val = int(rating)
+        if not (1 <= rating_val <= 5):
+            raise ValueError()
+    except (TypeError, ValueError):
+        return jsonify(error="A rating between 1 and 5 is required."), 400
 
-    if (
-        len(author) > 50
-        or len(comment) > 1000
-    ):
-        return jsonify(
-            error="Review is too long."
-        ), 400
+    if not user:
+        return jsonify(error="A valid device identifier is required."), 400
+
+    if len(author) > 50 or len(comment) > 1000:
+        return jsonify(error="Review text or author name is too long."), 400
 
     with closing(db()) as connection:
         connection.execute(
             """
-            INSERT INTO reviews(
+            INSERT INTO reviews (
                 movie_id,
                 device_id,
                 author,
@@ -876,16 +877,14 @@ def post_review(movie_id):
                 movie_id,
                 user,
                 author,
-                rating,
+                rating_val,
                 comment
             )
         )
-
         connection.commit()
 
-    return jsonify(
-        ok=True
-    ), 201
+    return jsonify(ok=True, success=True, message="Review added successfully"), 201
+
 
 
 # ============================================================================

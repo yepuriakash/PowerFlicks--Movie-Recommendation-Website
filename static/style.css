@@ -1134,37 +1134,58 @@ img {
 }
 
 .review-card {
-    padding: 15px 16px;
-    background: rgba(255, 255, 255, 0.025);
-    border: 1px solid var(--border-color);
-    border-radius: 9px;
+    position: relative;
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
 }
 
 .review-header {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 7px;
+    align-items: center;
+    margin-bottom: 8px;
 }
 
-.review-header strong {
-    color: var(--text-primary);
-    font-size: 0.9rem;
+.review-author-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.review-author-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #ffffff;
 }
 
 .review-stars {
-    color: var(--gold);
-    letter-spacing: 2px;
+    color: #ffb400;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+
+.review-date-badge {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
 }
 
 .review-comment {
-    color: var(--text-secondary);
-    font-size: 0.86rem;
-    line-height: 1.55;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.4;
+    margin: 0;
     white-space: pre-wrap;
 }
 
+.review-comment.muted-comment {
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+    font-size: 0.82rem;
+}
 
 /* ============================================================================
    13. FOOTER & RESPONSIVE BREAKPOINTS
