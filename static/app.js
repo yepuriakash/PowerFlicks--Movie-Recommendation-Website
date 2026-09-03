@@ -253,6 +253,53 @@ function render(movies, status = "", replace = true, showEmptyMessage = true) {
 }
 
 // ============================================================================
+// EDITORIAL SECTION & DYNAMIC TAB SWITCHING
+// ============================================================================
+function renderEditorialSection() {
+    const container = document.querySelector("#editorial-section");
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="editorial-grid">
+            <div class="editorial-card">
+                <div>
+                    <div class="editorial-tag">ACTOR SPOTLIGHT</div>
+                    <h3>Iconic Performances</h3>
+                    <p>Explore award-winning performances and filmographies from legendary actors across decades.</p>
+                </div>
+                <button type="button" class="editorial-btn" onclick="switchTab('popular')">
+                    EXPLORE ACTION HITS →
+                </button>
+            </div>
+
+            <div class="editorial-card">
+                <div>
+                    <div class="editorial-tag">CINEMA STORY</div>
+                    <h3>Masterpieces & Classics</h3>
+                    <p>Delve into groundbreaking storytelling, masterful direction, and cinema history.</p>
+                </div>
+                <button type="button" class="editorial-btn" onclick="switchTab('top_rated')">
+                    VIEW TOP CLASSICS →
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function switchTab(tabName) {
+    document.querySelectorAll("nav [data-list]").forEach((btn) => {
+        btn.classList.toggle("selected", btn.dataset.list === tabName);
+    });
+
+    load(tabName);
+
+    const sectionHeader = document.querySelector(".section-header");
+    if (sectionHeader) {
+        sectionHeader.scrollIntoView({ behavior: "smooth" });
+    }
+}
+
+// ============================================================================
 // MOVIE CATEGORY LOADING
 // ============================================================================
 async function loadPage(page) {
@@ -298,6 +345,8 @@ async function load(list = state.list) {
     state.searchQuery = "";
     state.view = "category";
 
+    renderDidYouMeanBanner(null);
+
     const peopleSection = document.querySelector("#people-section");
     if (peopleSection) {
         peopleSection.style.display = "none";
@@ -319,12 +368,7 @@ async function load(list = state.list) {
         upcoming: "Coming Soon"
     };
 
-    const sectionKicker = document.querySelector("#section-kicker");
     const heading = document.querySelector("#heading");
-
-    if (sectionKicker) {
-        sectionKicker.textContent = "Marquee";
-    }
     if (heading) {
         heading.textContent = names[list] || "Movies";
     }
@@ -344,6 +388,8 @@ async function showWatchlist() {
     state.totalPages = 1;
     state.view = "watchlist";
 
+    renderDidYouMeanBanner(null);
+
     const peopleSection = document.querySelector("#people-section");
     if (peopleSection) {
         peopleSection.style.display = "none";
@@ -358,12 +404,7 @@ async function showWatchlist() {
         headerWatchlistBtn.classList.add("selected");
     }
 
-    const sectionKicker = document.querySelector("#section-kicker");
     const heading = document.querySelector("#heading");
-
-    if (sectionKicker) {
-        sectionKicker.textContent = "My Collection";
-    }
     if (heading) {
         heading.textContent = "My List";
     }
@@ -454,36 +495,32 @@ async function initHeroCarousel() {
 
         if (bdayRes.status === "fulfilled" && bdayRes.value) {
             const val = bdayRes.value;
+            const seenIds = new Set();
 
-            if (val.telugu_birthday) {
+            if (val.international_birthday && !seenIds.has(val.international_birthday.id)) {
+                seenIds.add(val.international_birthday.id);
                 carouselState.slides.unshift({
                     type: "person",
-                    kicker: "🎂 TELUGU BIRTHDAY SPOTLIGHT",
-                    data: val.telugu_birthday
-                });
-            }
-
-            if (val.indian_birthday) {
-                carouselState.slides.unshift({
-                    type: "person",
-                    kicker: "🎂 INDIAN BIRTHDAY SPOTLIGHT",
-                    data: val.indian_birthday
-                });
-            }
-
-            if (val.international_birthday) {
-                carouselState.slides.unshift({
-                    type: "person",
-                    kicker: "🎂 INTERNATIONAL BIRTHDAY SPOTLIGHT",
+                    kicker: "🎂 BIRTHDAY SPOTLIGHT",
                     data: val.international_birthday
                 });
             }
 
-            if (!val.telugu_birthday && !val.indian_birthday && !val.international_birthday && val.spotlight) {
+            if (val.indian_birthday && !seenIds.has(val.indian_birthday.id)) {
+                seenIds.add(val.indian_birthday.id);
                 carouselState.slides.unshift({
                     type: "person",
                     kicker: "🎂 BIRTHDAY SPOTLIGHT",
-                    data: val.spotlight
+                    data: val.indian_birthday
+                });
+            }
+
+            if (val.telugu_birthday && !seenIds.has(val.telugu_birthday.id)) {
+                seenIds.add(val.telugu_birthday.id);
+                carouselState.slides.unshift({
+                    type: "person",
+                    kicker: "🎂 BIRTHDAY SPOTLIGHT",
+                    data: val.telugu_birthday
                 });
             }
         }
@@ -525,7 +562,6 @@ function renderCarouselSlide(index) {
         kicker.textContent = slide.kicker;
     }
 
-    // MOVIE SLIDE
     if (slide.type === "movie") {
         const movie = slide.data;
         if (backdrop) {
@@ -560,9 +596,7 @@ function renderCarouselSlide(index) {
             btnSecondary.classList.toggle("active", saved);
             btnSecondary.onclick = () => toggle(movie.id);
         }
-    }
-    // PERSON / BIRTHDAY SLIDE
-    else if (slide.type === "person") {
+    } else if (slide.type === "person") {
         const person = slide.data;
         const credits = person.combined_credits?.cast || [];
         const topBackdrop = credits.find((credit) => credit.backdrop_path)?.backdrop_path;
@@ -605,7 +639,6 @@ function renderCarouselSlide(index) {
         }
     }
 
-    // CAROUSEL DOTS
     if (dotsContainer) {
         dotsContainer.replaceChildren();
         carouselState.slides.forEach((_, idx) => {
@@ -890,10 +923,20 @@ async function detail(id) {
 
     if (!modal || !content) return;
 
-    content.innerHTML = '<p style="padding:40px;text-align:center;">Loading details…</p>';
-    if (!modal.open) {
-        modal.showModal();
+    if (modal.open) {
+        modal.close();
     }
+
+    content.innerHTML = `
+        <div class="movie-detail-modal" style="min-height: 450px; display: flex; align-items: center; justify-content: center; background: #10141c;">
+            <div style="text-align: center; color: var(--text-secondary);">
+                <div style="display: inline-block; width: 36px; height: 36px; border: 3px solid rgba(229,9,20,0.3); border-radius: 50%; border-top-color: var(--brand-red); animation: spin 0.8s linear infinite;"></div>
+                <p style="margin-top: 12px; font-weight: 600; font-size: 0.9rem;">Opening details…</p>
+            </div>
+        </div>
+    `;
+
+    modal.showModal();
 
     try {
         const movie = await api(`/api/movies/${id}`);
@@ -906,8 +949,10 @@ async function detail(id) {
                       (person) => `
                 <button type="button" class="cast-card" onclick="showPersonProfile(${Number(person.id)})" aria-label="View ${esc(person.name || "cast member")}">
                     <img src="${image(person.profile_path, "w185")}" alt="${esc(person.name || "Cast member")}" loading="lazy">
-                    <strong>${esc(person.name || "Unknown")}</strong>
-                    <span>${esc(person.character || "")}</span>
+                    <div class="cast-card-info">
+                        <strong>${esc(person.name || "Unknown")}</strong>
+                        <span>${esc(person.character || "")}</span>
+                    </div>
                 </button>
             `
                   )
@@ -920,30 +965,30 @@ async function detail(id) {
 
         content.innerHTML = `
             <div class="movie-detail-modal">
-                <section class="detail-hero" style="background-image: linear-gradient(0deg, #121620 0%, rgba(18,22,32,0.45) 55%, transparent 100%), url('${image(movie.backdrop_path, "original")}'); background-size:cover; background-position:center; padding:40px 24px 24px; border-radius:8px;">
+                <section class="detail-hero" style="background-image: linear-gradient(0deg, #10141c 0%, rgba(16,20,28,0.65) 60%, rgba(16,20,28,0.2) 100%), url('${image(movie.backdrop_path, "original")}'); background-size:cover; background-position:center;">
                     <div class="detail-hero-content">
-                        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:8px;">
+                        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:6px;">
                             ${movie.release_date?.slice(0, 4) || "TBA"} · ${movie.runtime || "—"} min · ★ ${tmdbRating}
                         </p>
-                        <h2 style="font-size:2rem;font-weight:800;margin:0;">${esc(movie.title || "Untitled")}</h2>
+                        <h2>${esc(movie.title || "Untitled")}</h2>
                     </div>
                 </section>
-                <section class="detail" style="padding:20px 0;">
-                    <p class="genres" style="color:var(--brand-red);font-weight:600;font-size:0.88rem;margin-bottom:10px;">
+                <section class="detail">
+                    <p class="genres" style="color:var(--brand-red);font-weight:700;font-size:0.88rem;margin-bottom:12px;">
                         ${(movie.genres || []).map((genre) => esc(genre.name)).join(" · ") || "Genre unavailable"}
                     </p>
-                    <p style="color:var(--text-secondary);margin-bottom:24px;line-height:1.6;">
+                    <p style="color:var(--text-secondary);margin-bottom:28px;line-height:1.6;font-size:0.92rem;">
                         ${esc(movie.overview || "No overview available.")}
                     </p>
                     <section class="movie-cast-section">
                         <div class="profile-section-title">Cast</div>
                         <div class="cast-grid">${castMarkup}</div>
                     </section>
-                    <section class="powerflicks-reviews" style="margin-top:32px;">
+                    <section class="powerflicks-reviews" style="margin-top:36px;">
                         <div class="profile-section-title">PowerFlicks Reviews</div>
                         <div class="reviews-list">${reviewsMarkup}</div>
                     </section>
-                    <section class="write-review-section" style="margin-top:32px;">
+                    <section class="write-review-section" style="margin-top:36px;">
                         <div class="profile-section-title">Write a Review</div>
                         <form id="powerflicks-review-form" class="review-form">
                             <div class="review-form-field">
@@ -968,9 +1013,9 @@ async function detail(id) {
                             </div>
                             <div class="review-form-field">
                                 <label for="review-comment">Your review</label>
-                                <textarea id="review-comment" name="comment" maxlength="1000" rows="5" placeholder="What did you think about this movie?" required></textarea>
+                                <textarea id="review-comment" name="comment" maxlength="1000" rows="4" placeholder="What did you think about this movie?" required></textarea>
                             </div>
-                            <button id="review-submit" type="submit" class="btn btn-primary">SUBMIT REVIEW</button>
+                            <button id="review-submit" type="submit" class="btn btn-primary" style="align-self:flex-start;">SUBMIT REVIEW</button>
                         </form>
                     </section>
                 </section>
@@ -980,13 +1025,162 @@ async function detail(id) {
         setupReviewForm(movie.id);
     } catch (error) {
         if (currentRequest === state.detailRequestId) {
-            content.innerHTML = `<p style="padding:20px;">${esc(error.message)}</p>`;
+            content.innerHTML = `<p style="padding:20px; text-align:center;">${esc(error.message)}</p>`;
         }
     }
 }
 
 // ============================================================================
-// TMDB MULTI-SEARCH
+// DYNAMIC FUZZY MATCHING / "DID YOU MEAN?" ENGINE
+// ============================================================================
+function getLevenshteinDistance(a, b) {
+    const matrix = Array.from({ length: a.length + 1 }, () =>
+        Array(b.length + 1).fill(0)
+    );
+
+    for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+    for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+
+    for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+            const cost = a[i - 1].toLowerCase() === b[j - 1].toLowerCase() ? 0 : 1;
+            matrix[i][j] = Math.min(
+                matrix[i - 1][j] + 1,
+                matrix[i][j - 1] + 1,
+                matrix[i - 1][j - 1] + cost
+            );
+        }
+    }
+    return matrix[a.length][b.length];
+}
+
+function normalizeString(str) {
+    return (str || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function findDynamicSuggestion(userQuery, movies) {
+    if (!userQuery || userQuery.trim().length < 3 || !movies.length) return null;
+
+    const rawQuery = userQuery.trim().toLowerCase();
+    const cleanQuery = normalizeString(userQuery);
+
+    let bestMatch = null;
+    let lowestDistance = Infinity;
+
+    for (const movie of movies) {
+        const canonicalTitle = movie.title || movie.name;
+        if (!canonicalTitle) continue;
+
+        const cleanTitle = normalizeString(canonicalTitle);
+
+        if (cleanQuery === cleanTitle && rawQuery !== canonicalTitle.toLowerCase()) {
+            return canonicalTitle;
+        }
+
+        const maxAllowedDistance = Math.min(3, Math.floor(cleanQuery.length / 3));
+        const distance = getLevenshteinDistance(cleanQuery, cleanTitle);
+
+        if (distance > 0 && distance <= maxAllowedDistance && distance < lowestDistance) {
+            lowestDistance = distance;
+            bestMatch = canonicalTitle;
+        }
+    }
+
+    return bestMatch;
+}
+
+function renderDidYouMeanBanner(suggestion) {
+    let banner = document.querySelector("#did-you-mean-banner");
+
+    if (!suggestion) {
+        if (banner) banner.remove();
+        return;
+    }
+
+    const moviesGrid = document.querySelector("#movies");
+    if (!moviesGrid) return;
+
+    if (!banner) {
+        banner = document.createElement("div");
+        banner.id = "did-you-mean-banner";
+        banner.className = "did-you-mean-banner";
+        moviesGrid.parentNode.insertBefore(banner, moviesGrid);
+    }
+
+    banner.innerHTML = `
+        <span>Did you mean: </span>
+        <button type="button" class="did-you-mean-link" onclick="applySuggestion('${esc(suggestion)}')">
+            ${esc(suggestion)}
+        </button>?
+    `;
+}
+
+function applySuggestion(suggestedQuery) {
+    const searchInput = document.querySelector("#search");
+    if (searchInput) {
+        searchInput.value = suggestedQuery;
+        searchInput.dispatchEvent(new Event("input"));
+    }
+}
+// ============================================================================
+// LIVE SEARCH AUTOCOMPLETE DROPDOWN
+// ============================================================================
+
+function renderSearchSuggestions(results) {
+    const dropdown = document.querySelector("#search-suggestions");
+    if (!dropdown) return;
+
+    if (!results || results.length === 0) {
+        dropdown.hidden = true;
+        dropdown.innerHTML = "";
+        return;
+    }
+
+    const items = results.slice(0, 5).map((item) => {
+        const title = esc(item.title || item.name || "Untitled");
+        const poster = image(item.poster_path || item.profile_path, "w185");
+        const type = item.media_type === "person" ? "Actor / Crew" : "Movie";
+        const year = (item.release_date || item.first_air_date || "").slice(0, 4);
+        const meta = year ? `${type} · ${year}` : type;
+
+        return `
+            <div class="suggestion-item" onclick="selectSuggestion(${Number(item.id)}, '${item.media_type}')">
+                <img src="${poster}" class="suggestion-thumb" alt="${title}" loading="lazy">
+                <div class="suggestion-info">
+                    <span class="suggestion-title">${title}</span>
+                    <span class="suggestion-meta">${meta}</span>
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    dropdown.innerHTML = items;
+    dropdown.hidden = false;
+}
+
+function selectSuggestion(id, mediaType) {
+    const dropdown = document.querySelector("#search-suggestions");
+    if (dropdown) dropdown.hidden = true;
+
+    if (mediaType === "person") {
+        showPersonProfile(id);
+    } else {
+        detail(id);
+    }
+}
+
+// Hide dropdown when clicking anywhere outside search box
+document.addEventListener("click", (event) => {
+    const searchBox = document.querySelector(".search-box");
+    const dropdown = document.querySelector("#search-suggestions");
+    if (searchBox && dropdown && !searchBox.contains(event.target)) {
+        dropdown.hidden = true;
+    }
+});
+
+
+// ============================================================================
+// TMDB MULTI-SEARCH ENGINE WITH AUTO-CORRECT
 // ============================================================================
 let searchTimer;
 const searchInput = document.querySelector("#search");
@@ -1005,14 +1199,13 @@ if (searchInput) {
             if (currentRequest !== state.requestId) return;
 
             if (!query) {
+                renderDidYouMeanBanner(null);
+                renderSearchSuggestions([]); // Hide dropdown on clear
                 load(state.list);
                 return;
             }
 
-            const sectionKicker = document.querySelector("#section-kicker");
             const heading = document.querySelector("#heading");
-
-            if (sectionKicker) sectionKicker.textContent = "Search Catalog";
             if (heading) heading.textContent = `Results for “${query}”`;
 
             renderLoading("Searching catalog…");
@@ -1051,18 +1244,25 @@ if (searchInput) {
                     }
                 }
 
+                // 1. POPULATE LIVE TYPEAHEAD DROPDOWN
+                renderSearchSuggestions(results);
+
+                // 2. CALCULATE DYNAMIC "DID YOU MEAN?" BANNER FOR GRID
+                const suggestion = findDynamicSuggestion(query, movies);
+                renderDidYouMeanBanner(suggestion);
+
                 state.movies = movies;
                 state.totalPages = 1;
                 state.page = 1;
 
-                render(movies, `${movies.length} movies found`);
+                render(movies, `${movies.length} titles found`);
                 updatePagination();
             } catch (error) {
                 if (currentRequest === state.requestId) {
                     render([], error.message, true, false);
                 }
             }
-        }, 300);
+        }, 250);
     };
 }
 
@@ -1124,9 +1324,6 @@ if (closeModalBtn) {
     };
 }
 
-// ============================================================================
-// MODAL BACKDROP / ESCAPE HANDLING
-// ============================================================================
 const modal = document.querySelector("#modal");
 if (modal) {
     modal.addEventListener("close", () => {
@@ -1140,6 +1337,7 @@ if (modal) {
 async function initialize() {
     setupCarouselControls();
     setupCarouselHover();
+    renderEditorialSection();
     await getWatchlist();
     await Promise.allSettled([load(), initHeroCarousel()]);
 }

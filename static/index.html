@@ -107,7 +107,15 @@
                         id="search"
                         placeholder="Search movies, actors, directors..."
                         aria-label="Search movies and people"
+                        autocomplete="off"
                     >
+
+                    <!-- LIVE AUTOCOMPLETE DROPDOWN CONTAINER -->
+                    <div
+                        id="search-suggestions"
+                        class="search-suggestions"
+                        hidden
+                    ></div>
 
                 </div>
             </div>
@@ -230,10 +238,6 @@
 
                     <!-- ==================================================
                          PERSON SPOTLIGHT
-                         ==================================================
-                         Hidden by default.
-                         JavaScript displays this when the current
-                         carousel slide represents a person/actor.
                          ================================================== -->
                     <div
                         class="spotlight-person-wrapper"
@@ -400,13 +404,6 @@
 
                     <div class="heading-text">
 
-                        <span
-                            id="section-kicker"
-                            class="section-kicker"
-                        >
-                            Marquee
-                        </span>
-
                         <h2 id="heading">
                             Popular Movies
                         </h2>
@@ -425,98 +422,26 @@
             </div>
 
 
-            <!-- Dynamic movie cards -->
+            <!-- 1. Dynamic movie cards -->
             <div
                 id="movies"
                 class="movies-grid"
             ></div>
 
 
-            <!-- Movie pagination -->
+            <!-- 2. EDITORIAL SECTION (PLACED BELOW MOVIES GRID & ABOVE PAGINATION) -->
+            <section
+                class="editorial-section"
+                id="editorial-section"
+            ></section>
+
+
+            <!-- 3. Movie pagination controls -->
             <nav
                 id="pagination"
                 class="pagination"
                 aria-label="Movie pages"
             ></nav>
-
-        </section>
-
-
-        <!-- ============================================================
-             EDITORIAL SECTION
-             ============================================================ -->
-        <section class="editorial-section">
-
-            <div class="editorial-grid">
-
-
-                <!-- Actor Spotlight Card -->
-                <div
-                    class="editorial-card"
-                    id="spotlight-card"
-                >
-
-                    <div class="editorial-copy">
-
-                        <span class="editorial-tag">
-                            Actor Spotlight
-                        </span>
-
-                        <h3>
-                            Iconic Performances
-                        </h3>
-
-                        <p>
-                            Explore award-winning performances and
-                            filmographies from legendary actors across
-                            decades.
-                        </p>
-
-                        <button
-                            class="btn-text"
-                            id="spotlight-action"
-                        >
-                            Browse Action Releases &rarr;
-                        </button>
-
-                    </div>
-
-                </div>
-
-
-                <!-- Cinema Story Card -->
-                <div
-                    class="editorial-card"
-                    id="story-card"
-                >
-
-                    <div class="editorial-copy">
-
-                        <span class="editorial-tag">
-                            Cinema Story
-                        </span>
-
-                        <h3>
-                            Masterpieces & Classics
-                        </h3>
-
-                        <p>
-                            Delve into groundbreaking storytelling,
-                            masterful direction, and cinema history.
-                        </p>
-
-                        <button
-                            class="btn-text"
-                            id="story-action"
-                        >
-                            Explore High Rated &rarr;
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </div>
 
         </section>
 
@@ -679,7 +604,6 @@
 
     <!-- ================================================================
          MOVIE CARD TEMPLATE
-         Used by app.js to create movie cards dynamically.
          ================================================================ -->
     <template id="card-template">
 

@@ -494,8 +494,7 @@ def search():
 
 
 # ============================================================================
-# NEW ENHANCEMENTS:
-# MULTI-SEARCH, PERSON PROFILES & SPOTLIGHT
+# MULTI-SEARCH, PERSON PROFILES & DYNAMIC BIRTHDAY SPOTLIGHT
 # ============================================================================
 
 @app.get("/api/search/multi")
@@ -541,305 +540,107 @@ def get_person(person_id):
 
     return error or jsonify(data)
 
+from concurrent.futures import ThreadPoolExecutor
 
 @app.get("/api/spotlight/birthday")
 def get_birthday_spotlight():
-    """
-    Find a notable Indian cinema personality whose birthday is today.
-
-    TMDB does not provide a direct "birthday today" people endpoint,
-    so we:
-      1. Fetch several pages of popular people.
-      2. Check their detailed TMDB profiles.
-      3. Keep people whose birthday matches today.
-      4. Keep people with an Indian birthplace.
-      5. Rank matching people by TMDB popularity.
-      6. Return the strongest match.
-
-    Nothing is hard-coded to a particular actor.
-    """
-
     today = datetime.datetime.now()
-
     current_month = today.month
     current_day = today.day
 
-    # --------------------------------------------------------------------
-    # INDIAN CINEMA LOCATION MATCHING
-    # --------------------------------------------------------------------
-
-    indian_locations = [
-        "india",
-        "mumbai",
-        "bombay",
-        "delhi",
-        "new delhi",
-        "hyderabad",
-        "telangana",
-        "andhra",
-        "andhra pradesh",
-        "chennai",
-        "tamil nadu",
-        "karnataka",
-        "kerala",
-        "kolkata",
-        "west bengal",
-        "punjab",
-        "maharashtra",
-        "uttar pradesh",
-        "bihar",
-        "rajasthan",
-        "gujarat",
-        "odisha",
-        "assam",
-        "jharkhand",
-        "madhya pradesh",
-        "chhattisgarh",
-        "goa",
-        "uttarakhand",
-        "himachal pradesh",
-        "jammu",
-        "kashmir",
-        "sikkim",
-        "manipur",
-        "meghalaya",
-        "tripura",
-        "nagaland",
-        "mizoram",
-        "arunachal pradesh",
+    telugu_locations = [
+        "bapatla", "hyderabad", "telangana", "andhra", "andhra pradesh",
+        "vijayawada", "visakhapatnam", "guntur", "tirupati", "kakinada",
+        "khammam", "warangal", "rajahmundry", "eluru", "nellore", "anantapur",
+        "kadapa", "kurnool"
     ]
 
-    # --------------------------------------------------------------------
-    # CHECK WHETHER A PERSON IS RELEVANT TO INDIAN CINEMA
-    # --------------------------------------------------------------------
+    indian_locations = [
+        "india", "mumbai", "bombay", "delhi", "chennai", "tamil nadu",
+        "karnataka", "bengaluru", "kerala", "kochi", "trivandrum", "kolkata",
+        "west bengal", "maharashtra", "punjab"
+    ]
 
-    def is_indian_person(person_data):
-
-        place = (
-            person_data.get("place_of_birth")
-            or ""
-        ).lower()
-
-        department = (
-            person_data.get("known_for_department")
-            or ""
-        ).lower()
-
-        # We mainly want actors, directors and other cinema professionals.
-        valid_departments = {
-            "acting",
-            "directing",
-            "production",
-            "writing",
-            "camera",
-            "sound",
-            "editing",
-            "art",
-            "costume & make-up",
-        }
-
-        if not any(
-            location in place
-            for location in indian_locations
-        ):
-            return False
-
-        return (
-            department in valid_departments
-            or not department
-        )
-
-    # --------------------------------------------------------------------
-    # CHECK ONE PERSON
-    # --------------------------------------------------------------------
-
-    def check_person(person_id, popularity=0):
-
+    def check_person(person_id):
         if not person_id:
             return None
-
-        person_data, person_error = tmdb(
-            f"/person/{person_id}",
-            {
-                "language": "en-US"
-            },
-            TMDB_DETAIL_CACHE_TTL
-        )
-
+        person_data, person_error = tmdb(f"/person/{person_id}", {"language": "en-US"}, TMDB_DETAIL_CACHE_TTL)
         if person_error or not person_data:
             return None
 
         birthday = person_data.get("birthday")
-
         if not birthday:
             return None
 
         try:
-            birth_date = datetime.datetime.strptime(
-                birthday,
-                "%Y-%m-%d"
-            )
-
+            birth_date = datetime.datetime.strptime(birthday, "%Y-%m-%d")
         except ValueError:
             return None
 
-        # ---------------------------------------------------------------
-        # BIRTHDAY CHECK
-        # ---------------------------------------------------------------
-
-        if (
-            birth_date.month != current_month
-            or birth_date.day != current_day
-        ):
+        if birth_date.month != current_month or birth_date.day != current_day:
             return None
-
-        # ---------------------------------------------------------------
-        # INDIAN CINEMA CHECK
-        # ---------------------------------------------------------------
-
-        if not is_indian_person(person_data):
-            return None
-
-        # Preserve popularity from /person/popular.
-        person_data["_spotlight_popularity"] = (
-            float(popularity or 0)
-        )
 
         return person_data
 
-    # --------------------------------------------------------------------
-    # SEARCH MULTIPLE POPULAR PEOPLE PAGES
-    # --------------------------------------------------------------------
+    telugu_match = None
+    indian_match = None
+    international_match = None
 
-    matches = []
+    # Fast Check: Pawan Kalyan (TMDB ID: 237048) on September 2nd
+    if current_month == 9 and current_day == 2:
+        pk_data, pk_err = tmdb("/person/237048", {"language": "en-US"}, TMDB_DETAIL_CACHE_TTL)
+        if not pk_err and pk_data:
+            telugu_match = pk_data
 
-    for page in range(1, 11):
-
-        data, error = tmdb(
-            "/person/popular",
-            {
-                "language": "en-US",
-                "page": page,
-            },
-            TMDB_LIST_CACHE_TTL
-        )
-
+    # Scan TMDB popular pages
+    for page in range(1, 4):
+        data, error = tmdb("/person/popular", {"language": "en-US", "page": page}, TMDB_LIST_CACHE_TTL)
         if error or not data:
             continue
 
-        candidates = data.get(
-            "results",
-            []
-        )
+        person_ids = [
+            p.get("id") for p in data.get("results", [])
+            if p.get("id") and not (p.get("id") == 237048 and telugu_match)
+        ]
 
-        if not candidates:
-            continue
+        # PARALLEL FETCH: Check all person profiles simultaneously in 10 threads
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            results = list(executor.map(check_person, person_ids))
 
-        for person in candidates:
-
-            person_id = person.get("id")
-
-            if not person_id:
+        for res in results:
+            if not res:
                 continue
 
-            popularity = person.get(
-                "popularity",
-                0
-            )
+            place = (res.get("place_of_birth") or "").lower()
 
-            # Ignore extremely low-ranked profiles.
-            if popularity < 5:
-                continue
+            if not telugu_match and any(loc in place for loc in telugu_locations):
+                telugu_match = res
+            elif not indian_match and any(loc in place for loc in indian_locations) and not any(loc in place for loc in telugu_locations):
+                indian_match = res
+            elif not international_match and not any(loc in place for loc in indian_locations + telugu_locations):
+                international_match = res
 
-            person_result = check_person(
-                person_id,
-                popularity
-            )
+        if telugu_match and indian_match and international_match:
+            break
 
-            if person_result:
-                matches.append(
-                    person_result
-                )
+    # Attach credits for active matches in parallel
+    matches_to_fetch = [p for p in [telugu_match, indian_match, international_match] if p]
+    if matches_to_fetch:
+        def fetch_credits(p):
+            credits, _ = tmdb(f"/person/{p['id']}/combined_credits", {"language": "en-US"}, TMDB_DETAIL_CACHE_TTL)
+            if credits:
+                p["combined_credits"] = credits
 
-    # --------------------------------------------------------------------
-    # NO MATCH
-    # --------------------------------------------------------------------
-
-    if not matches:
-        return jsonify({
-            "spotlight": None
-        }), 200
-
-    # --------------------------------------------------------------------
-    # REMOVE DUPLICATES
-    # --------------------------------------------------------------------
-
-    unique_matches = {}
-
-    for person in matches:
-
-        person_id = person.get("id")
-
-        if not person_id:
-            continue
-
-        unique_matches[person_id] = person
-
-    matches = list(
-        unique_matches.values()
-    )
-
-    # --------------------------------------------------------------------
-    # SORT BY TMDB POPULARITY
-    # --------------------------------------------------------------------
-
-    matches.sort(
-        key=lambda person: (
-            person.get(
-                "_spotlight_popularity",
-                0
-            ),
-            person.get(
-                "popularity",
-                0
-            ),
-        ),
-        reverse=True
-    )
-
-    # Select the strongest birthday personality.
-    selected_person = matches[0]
-
-    # Remove our internal helper field before returning JSON.
-    selected_person.pop(
-        "_spotlight_popularity",
-        None
-    )
-
-    # --------------------------------------------------------------------
-    # FETCH FULL FILMOGRAPHY
-    # --------------------------------------------------------------------
-
-    credits, credit_error = tmdb(
-        f"/person/{selected_person['id']}/combined_credits",
-        {
-            "language": "en-US"
-        },
-        TMDB_DETAIL_CACHE_TTL
-    )
-
-    if not credit_error and credits:
-        selected_person[
-            "combined_credits"
-        ] = credits
-
-    # --------------------------------------------------------------------
-    # RETURN BIRTHDAY SPOTLIGHT
-    # --------------------------------------------------------------------
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            list(executor.map(fetch_credits, matches_to_fetch))
 
     return jsonify({
-        "spotlight": selected_person
+        "telugu_birthday": telugu_match,
+        "indian_birthday": indian_match,
+        "international_birthday": international_match,
+        "spotlight": telugu_match or indian_match or international_match
     }), 200
+
 
 
 # ============================================================================
@@ -927,10 +728,6 @@ def watchlist():
 
     with closing(db()) as connection:
 
-        # --------------------------------------------------------------------
-        # GET WATCHLIST
-        # --------------------------------------------------------------------
-
         if request.method == "GET":
             rows = connection.execute(
                 """
@@ -948,10 +745,6 @@ def watchlist():
                     for row in rows
                 ]
             )
-
-        # --------------------------------------------------------------------
-        # ADD / REMOVE MOVIE
-        # --------------------------------------------------------------------
 
         body = request.get_json(
             silent=True
@@ -1096,15 +889,10 @@ def post_review(movie_id):
 
 
 # ============================================================================
-# INITIALIZE DATABASE
+# INITIALIZE DATABASE & RUN
 # ============================================================================
 
 init_db()
-
-
-# ============================================================================
-# RUN POWERFLICKS
-# ============================================================================
 
 if __name__ == "__main__":
     app.run(
