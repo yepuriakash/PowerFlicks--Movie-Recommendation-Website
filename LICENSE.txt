@@ -1,0 +1,71 @@
+POWERFLICKS — PROPRIETARY LICENSE
+
+Copyright © 2026 Akash Yepuri. All Rights Reserved.
+
+1. OWNERSHIP
+
+This project, including its original source code, architecture, designs,
+documentation, original components, and other original materials, is the
+property of Akash Chandra Yepuri and is protected by applicable copyright laws.
+
+2. VIEWING AND EVALUATION
+
+This repository is publicly available for viewing and evaluation purposes,
+including by recruiters, employers, educational institutions, and other
+interested parties.
+
+You may view and evaluate the project for personal, educational, recruitment,
+or hiring purposes.
+
+3. RESTRICTIONS
+
+Except as expressly permitted in this license, you may NOT, without prior
+written permission from the copyright holder:
+
+- Copy or reproduce the source code or substantial portions of it.
+- Reuse the source code in another project.
+- Modify or create derivative works based on the project.
+- Redistribute or republish the source code.
+- Sell or commercially exploit the project or its source code.
+- Present the project or substantial portions of it as your own work.
+- Use the PowerFlicks name, branding, logo, or original designs in another
+  project.
+- Upload, publish, or distribute modified or copied versions of this project.
+
+4. COMMERCIAL LICENSING
+
+The copyright holder may, at their sole discretion, grant permission to use,
+reproduce, modify, distribute, or commercially exploit this project or
+portions of its source code under a separate written license agreement.
+
+Such permission may be subject to licensing fees and additional terms agreed
+upon between the copyright holder and the requesting party.
+
+Accessing or viewing this public repository does not grant permission for
+commercial use, reuse, redistribution, modification, or creation of
+derivative works.
+
+5. LICENSING INQUIRIES
+
+For commercial licensing, reuse, modification, redistribution, or any other
+use beyond the permissions stated above, please contact the copyright holder
+to discuss licensing terms and fees.
+
+6. NO IMPLIED RIGHTS
+
+Except for the limited viewing and evaluation permissions expressly stated
+above, no rights or licenses are granted, whether express or implied, to
+use, reproduce, modify, distribute, sublicense, sell, or commercially exploit
+this project or its contents.
+
+7. THIRD-PARTY MATERIALS
+
+This license applies only to original materials owned by the copyright
+holder. Third-party libraries, APIs, fonts, images, icons, data, and other
+materials included in or used by the project remain subject to their
+respective licenses and terms.
+
+8. DISCLAIMER
+
+The project and its original materials are provided "AS IS", without
+warranties of any kind, to the extent permitted by applicable law.
