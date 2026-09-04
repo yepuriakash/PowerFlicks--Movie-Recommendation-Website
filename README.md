@@ -137,7 +137,7 @@ The browser communicates with the Flask backend instead of directly communicatin
 | **Render** | Application deployment |
 | **GitHub** | Source control and project hosting |
 
-**Engineering Highlights**
+## Engineering Highlights
 
 Backend-First API Architecture
 Instead of allowing browser-side JavaScript to communicate directly with TMDB, PowerFlicks routes external API communication through Flask.
@@ -154,7 +154,7 @@ The frontend uses JavaScript to dynamically update movie cards, search results, 
 
 
 
-**Security & API Handling**
+## Security & API Handling
 PowerFlicks follows a backend-mediated API architecture
 Browser
    |
@@ -171,7 +171,7 @@ For local development, create a .env file based on .env.example.
 
 Never commit real API credentials or secrets to GitHub.
 
-**Project Structure**
+## Project Structure
 PowerFlicks--Movie-Recommendation-Website/
 |
 ├── app.py
@@ -197,7 +197,7 @@ PowerFlicks--Movie-Recommendation-Website/
     ├── search-results.png
     └── my-list.png
 
-**Local Setup**
+## Local Setup
 1. Clone the repository
 git clone https://github.com/yepuriakash/PowerFlicks--Movie-Recommendation-Website.git
 cd PowerFlicks--Movie-Recommendation-Website
@@ -227,7 +227,7 @@ python app.py
 The application will be available locally at:
 http://localhost:5000
 
-**Deployment**
+## Deployment
 PowerFlicks is deployed using Render.
 
 The production deployment runs the Flask application using the project’s Procfile and configured environment variables.
@@ -236,7 +236,7 @@ Production Environment
 
 The TMDB API credential should be configured through the deployment platform’s environment variables rather than committed to the repository.
 
-**Future Improvements**
+## Future Improvements
 Potential future improvements include:
 
 * User authentication and individual accounts
@@ -249,12 +249,12 @@ Potential future improvements include:
 * Further frontend performance optimization
 * Enhanced mobile experience
 
-**License**
+## License
 
 This project is licensed under the terms specified in LICENSE.txt⁠￼.
 
-**Author
-Akash Yepuri**
+## Author
+## Akash Yepuri
 Built as a full-stack movie discovery project combining frontend engineering, backend API development, database persistence, and third-party API integration.
 
 
