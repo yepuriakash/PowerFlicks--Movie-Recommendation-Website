@@ -254,7 +254,7 @@ Potential future improvements include:
 This project is licensed under the terms specified in LICENSE.txt⁠￼.
 
 ## Author
-## Akash Yepuri
+Akash Yepuri
 Built as a full-stack movie discovery project combining frontend engineering, backend API development, database persistence, and third-party API integration.
 
 
