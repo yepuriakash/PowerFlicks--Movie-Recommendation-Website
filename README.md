@@ -93,7 +93,7 @@ The browser communicates with the Flask backend instead of directly communicatin
 
 ## Architecture
 
-```text
+
                          +--------------+
                          |     User     |
                          +------+-------+
@@ -122,6 +122,8 @@ The browser communicates with the Flask backend instead of directly communicatin
         | Search           |       | Ratings          |
         | Recommendations  |       |                  |
         +------------------+       +------------------+
+
+## Tech stack
 
 | Technology | Purpose |
 |---|---|
