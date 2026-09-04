@@ -310,6 +310,12 @@ async function loadPage(page) {
     renderLoading();
     updatePagination();
 
+    // Smooth scroll with CSS scroll-margin offset
+    const heading = document.querySelector("#heading") || document.querySelector(".section-header");
+    if (heading) {
+        heading.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
     try {
         const data = await api(`/api/movies?list=${encodeURIComponent(state.list)}&page=${page}`);
         if (currentRequest !== state.requestId) return;
@@ -941,7 +947,7 @@ function updateStarVisualState(rating) {
 }
 
 // ============================================================================
-// MOVIE MODAL DETAILS
+// MOVIE MODAL DETAILS WITH TRAILER & EXPANDABLE CAST
 // ============================================================================
 async function detail(id) {
     const modal = document.querySelector("#modal");
@@ -969,21 +975,26 @@ async function detail(id) {
         const movie = await api(`/api/movies/${id}`);
         if (currentRequest !== state.detailRequestId || !modal.open) return;
 
-        const cast = (movie.credits?.cast || []).filter((person) => person.profile_path).slice(0, 8);
-        const castMarkup = cast.length
-            ? cast
-                  .map(
-                      (person) => `
-                <button type="button" class="cast-card" onclick="showPersonProfile(${Number(person.id)})" aria-label="View ${esc(person.name || "cast member")}">
-                    <img src="${image(person.profile_path, "w185")}" alt="${esc(person.name || "Cast member")}" loading="lazy">
-                    <div class="cast-card-info">
-                        <strong>${esc(person.name || "Unknown")}</strong>
-                        <span>${esc(person.character || "")}</span>
-                    </div>
-                </button>
-            `
-                  )
-                  .join("")
+        // Extract trailer video (prefer official YouTube Trailer)
+        const videos = movie.videos?.results || [];
+        const trailer = videos.find(v => v.site === "YouTube" && v.type === "Trailer") || videos.find(v => v.site === "YouTube");
+        const trailerKey = trailer ? trailer.key : null;
+
+        // Process Cast (Up to 24 members)
+        const allCast = (movie.credits?.cast || []).filter((person) => person.profile_path).slice(0, 24);
+
+        const renderCastMarkup = (castList) => castList.map((person) => `
+            <button type="button" class="cast-card" onclick="showPersonProfile(${Number(person.id)})" aria-label="View ${esc(person.name || "cast member")}">
+                <img src="${image(person.profile_path, "w185")}" alt="${esc(person.name || "Cast member")}" loading="lazy">
+                <div class="cast-card-info">
+                    <strong>${esc(person.name || "Unknown")}</strong>
+                    <span>${esc(person.character || "")}</span>
+                </div>
+            </button>
+        `).join("");
+
+        const initialCastMarkup = allCast.length
+            ? renderCastMarkup(allCast.slice(0, 8))
             : '<p class="empty">Cast information is currently unavailable.</p>';
 
         const reviews = movie.powerflicks_reviews || [];
@@ -992,12 +1003,17 @@ async function detail(id) {
 
         content.innerHTML = `
             <div class="movie-detail-modal">
-                <section class="detail-hero" style="background-image: linear-gradient(0deg, #10141c 0%, rgba(16,20,28,0.65) 60%, rgba(16,20,28,0.2) 100%), url('${image(movie.backdrop_path, "original")}'); background-size:cover; background-position:center;">
+                <section class="detail-hero" style="background-image: linear-gradient(0deg, #10141c 0%, rgba(16,20,28,0.65) 60%, rgba(16,20,28,0.2) 100%), url('${image(movie.backdrop_path, "original")}'); background-size:cover; background-position:center 20%;">
                     <div class="detail-hero-content">
                         <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:6px;">
                             ${movie.release_date?.slice(0, 4) || "TBA"} · ${movie.runtime || "—"} min · ★ ${tmdbRating}
                         </p>
                         <h2>${esc(movie.title || "Untitled")}</h2>
+                        ${trailerKey ? `
+                            <button type="button" class="btn btn-primary trailer-btn" onclick="playTrailer('${trailerKey}')" style="margin-top:12px; display:inline-flex; align-items:center; gap:8px;">
+                                ▶ PLAY TRAILER
+                            </button>
+                        ` : ''}
                     </div>
                 </section>
                 <section class="detail">
@@ -1007,14 +1023,27 @@ async function detail(id) {
                     <p style="color:var(--text-secondary);margin-bottom:28px;line-height:1.6;font-size:0.92rem;">
                         ${esc(movie.overview || "No overview available.")}
                     </p>
+
+                    <!-- TRAILER CONTAINER (HIDDEN UNTIL PLAY CLICKED) -->
+                    <div id="trailer-player-container" style="display:none; margin-bottom:28px; position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:12px;"></div>
+
                     <section class="movie-cast-section">
-                        <div class="profile-section-title">Cast</div>
-                        <div class="cast-grid">${castMarkup}</div>
+                        <div class="profile-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                            <span>Cast</span>
+                            ${allCast.length > 8 ? `
+                                <button type="button" id="toggle-cast-btn" class="editorial-btn" style="padding:4px 10px; font-size:0.75rem;">
+                                    SHOW MORE (${allCast.length - 8}) ↓
+                                </button>
+                            ` : ''}
+                        </div>
+                        <div id="cast-grid-container" class="cast-grid">${initialCastMarkup}</div>
                     </section>
+
                     <section class="powerflicks-reviews" style="margin-top:36px;">
                         <div class="profile-section-title">PowerFlicks Reviews</div>
                         <div id="modal-reviews-container" class="reviews-list">${reviewsMarkup}</div>
                     </section>
+
                     <section class="write-review-section" style="margin-top:36px;">
                         <div class="profile-section-title">Write a Review</div>
                         <form id="powerflicks-review-form" class="review-form">
@@ -1025,16 +1054,12 @@ async function detail(id) {
                             <div class="review-form-field">
                                 <label>Your rating</label>
                                 <div class="review-rating-selector" role="radiogroup" aria-label="Movie rating">
-                                    ${[1, 2, 3, 4, 5]
-                                        .map(
-                                            (value) => `
+                                    ${[1, 2, 3, 4, 5].map((value) => `
                                         <label class="review-star-label" title="${value} star${value > 1 ? "s" : ""}">
                                             <input type="radio" name="review-rating" value="${value}">
                                             <span>★</span>
                                         </label>
-                                    `
-                                        )
-                                        .join("")}
+                                    `).join("")}
                                     <span id="review-rating-display" class="review-rating-display">0/5</span>
                                 </div>
                             </div>
@@ -1049,12 +1074,42 @@ async function detail(id) {
             </div>
         `;
 
+        // Handle Expandable Cast Toggle
+        const toggleCastBtn = document.querySelector("#toggle-cast-btn");
+        const castGridContainer = document.querySelector("#cast-grid-container");
+        let castExpanded = false;
+
+        if (toggleCastBtn && castGridContainer) {
+            toggleCastBtn.onclick = () => {
+                castExpanded = !castExpanded;
+                castGridContainer.innerHTML = renderCastMarkup(castExpanded ? allCast : allCast.slice(0, 8));
+                toggleCastBtn.textContent = castExpanded ? "SHOW LESS ↑" : `SHOW MORE (${allCast.length - 8}) ↓`;
+            };
+        }
+
         setupReviewForm(movie.id);
     } catch (error) {
         if (currentRequest === state.detailRequestId) {
             content.innerHTML = `<p style="padding:20px; text-align:center;">${esc(error.message)}</p>`;
         }
     }
+}
+
+// Trailer Player Trigger
+function playTrailer(youtubeKey) {
+    const container = document.querySelector("#trailer-player-container");
+    if (!container) return;
+
+    container.innerHTML = `
+        <iframe
+            src="https://www.youtube-nocookie.com/embed/${youtubeKey}?autoplay=1"
+            style="position:absolute; top:0; left:0; width:100%; height:100%; border:0; border-radius:12px;"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+        </iframe>
+    `;
+    container.style.display = "block";
+    container.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 // ============================================================================

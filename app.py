@@ -4,12 +4,13 @@ import sqlite3
 import threading
 import time
 from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 from copy import deepcopy
 
 import requests
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, current_app, jsonify, request, send_from_directory
 
 load_dotenv()
 
@@ -170,15 +171,8 @@ def _is_temporary_tmdb_failure(error):
 
 
 def _tmdb_unavailable_error():
-    return (
-        jsonify(
-            error=(
-                "Movie service is temporarily unavailable. "
-                "Please try again."
-            )
-        ),
-        502,
-    )
+    # Return a raw Python dict and status code to ensure context-safety inside child threads
+    return {"error": "Unable to connect to the TMDB database right now. Please refresh or try again shortly."}, 502
 
 
 # ============================================================================
@@ -215,8 +209,7 @@ def _request_tmdb(path, params):
 
             if (
                 not temporary_failure
-                or attempt ==
-                TMDB_MAX_ATTEMPTS - 1
+                or attempt == TMDB_MAX_ATTEMPTS - 1
             ):
                 break
 
@@ -240,12 +233,7 @@ def tmdb(
         return (
             None,
             (
-                jsonify(
-                    error=(
-                        "TMDB is not configured. "
-                        "Add TMDB_API_TOKEN to .env."
-                    )
-                ),
+                {"error": "TMDB is not configured. Add TMDB_API_TOKEN to .env."},
                 503,
             ),
         )
@@ -297,8 +285,7 @@ def tmdb(
 
     if not request_owner:
         app.logger.info(
-            "TMDB cache MISS "
-            "(waiting for in-flight request): %s",
+            "TMDB cache MISS (waiting for in-flight request): %s",
             path
         )
 
@@ -464,7 +451,11 @@ def movies():
         TMDB_LIST_CACHE_TTL
     )
 
-    return error or jsonify(data)
+    if error:
+        err_dict, status_code = error
+        return jsonify(err_dict), status_code
+
+    return jsonify(data), 200
 
 
 @app.get("/api/search")
@@ -477,7 +468,7 @@ def search():
     if not query:
         return jsonify(
             results=[]
-        )
+        ), 200
 
     data, error = tmdb(
         "/search/movie",
@@ -490,7 +481,11 @@ def search():
         TMDB_SEARCH_CACHE_TTL
     )
 
-    return error or jsonify(data)
+    if error:
+        err_dict, status_code = error
+        return jsonify(err_dict), status_code
+
+    return jsonify(data), 200
 
 
 # ============================================================================
@@ -507,7 +502,7 @@ def search_multi():
     if not query:
         return jsonify(
             results=[]
-        )
+        ), 200
 
     data, error = tmdb(
         "/search/multi",
@@ -520,7 +515,11 @@ def search_multi():
         TMDB_SEARCH_CACHE_TTL
     )
 
-    return error or jsonify(data)
+    if error:
+        err_dict, status_code = error
+        return jsonify(err_dict), status_code
+
+    return jsonify(data), 200
 
 
 @app.get("/api/person/<int:person_id>")
@@ -538,9 +537,12 @@ def get_person(person_id):
         TMDB_DETAIL_CACHE_TTL
     )
 
-    return error or jsonify(data)
+    if error:
+        err_dict, status_code = error
+        return jsonify(err_dict), status_code
 
-from concurrent.futures import ThreadPoolExecutor
+    return jsonify(data), 200
+
 
 @app.get("/api/spotlight/birthday")
 def get_birthday_spotlight():
@@ -561,26 +563,33 @@ def get_birthday_spotlight():
         "west bengal", "maharashtra", "punjab"
     ]
 
+    # Grab the true Flask app instance to pass into ThreadPoolExecutor workers
+    app_obj = current_app._get_current_object()
+
     def check_person(person_id):
         if not person_id:
             return None
-        person_data, person_error = tmdb(f"/person/{person_id}", {"language": "en-US"}, TMDB_DETAIL_CACHE_TTL)
-        if person_error or not person_data:
-            return None
+        with app_obj.app_context():
+            try:
+                person_data, person_error = tmdb(f"/person/{person_id}", {"language": "en-US"}, TMDB_DETAIL_CACHE_TTL)
+                if person_error or not isinstance(person_data, dict):
+                    return None
 
-        birthday = person_data.get("birthday")
-        if not birthday:
-            return None
+                birthday = person_data.get("birthday")
+                if not birthday:
+                    return None
 
-        try:
-            birth_date = datetime.datetime.strptime(birthday, "%Y-%m-%d")
-        except ValueError:
-            return None
+                try:
+                    birth_date = datetime.datetime.strptime(birthday, "%Y-%m-%d")
+                except (ValueError, TypeError):
+                    return None
 
-        if birth_date.month != current_month or birth_date.day != current_day:
-            return None
+                if birth_date.month != current_month or birth_date.day != current_day:
+                    return None
 
-        return person_data
+                return person_data
+            except Exception:
+                return None
 
     telugu_match = None
     indian_match = None
@@ -588,48 +597,57 @@ def get_birthday_spotlight():
 
     # Fast Check: Pawan Kalyan (TMDB ID: 237048) on September 2nd
     if current_month == 9 and current_day == 2:
-        pk_data, pk_err = tmdb("/person/237048", {"language": "en-US"}, TMDB_DETAIL_CACHE_TTL)
-        if not pk_err and pk_data:
-            telugu_match = pk_data
+        try:
+            pk_data, pk_err = tmdb("/person/237048", {"language": "en-US"}, TMDB_DETAIL_CACHE_TTL)
+            if not pk_err and isinstance(pk_data, dict):
+                telugu_match = pk_data
+        except Exception:
+            pass
 
     # Scan TMDB popular pages
     for page in range(1, 4):
-        data, error = tmdb("/person/popular", {"language": "en-US", "page": page}, TMDB_LIST_CACHE_TTL)
-        if error or not data:
-            continue
-
-        person_ids = [
-            p.get("id") for p in data.get("results", [])
-            if p.get("id") and not (p.get("id") == 237048 and telugu_match)
-        ]
-
-        # PARALLEL FETCH: Check all person profiles simultaneously in 10 threads
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            results = list(executor.map(check_person, person_ids))
-
-        for res in results:
-            if not res:
+        try:
+            data, error = tmdb("/person/popular", {"language": "en-US", "page": page}, TMDB_LIST_CACHE_TTL)
+            if error or not data or not isinstance(data, dict):
                 continue
 
-            place = (res.get("place_of_birth") or "").lower()
+            person_ids = [
+                p.get("id") for p in data.get("results", [])
+                if isinstance(p, dict) and p.get("id") and not (p.get("id") == 237048 and telugu_match)
+            ]
 
-            if not telugu_match and any(loc in place for loc in telugu_locations):
-                telugu_match = res
-            elif not indian_match and any(loc in place for loc in indian_locations) and not any(loc in place for loc in telugu_locations):
-                indian_match = res
-            elif not international_match and not any(loc in place for loc in indian_locations + telugu_locations):
-                international_match = res
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                results = list(executor.map(check_person, person_ids))
 
-        if telugu_match and indian_match and international_match:
-            break
+            for res in results:
+                if not res:
+                    continue
+
+                place = (res.get("place_of_birth") or "").lower()
+
+                if not telugu_match and any(loc in place for loc in telugu_locations):
+                    telugu_match = res
+                elif not indian_match and any(loc in place for loc in indian_locations) and not any(loc in place for loc in telugu_locations):
+                    indian_match = res
+                elif not international_match and not any(loc in place for loc in indian_locations + telugu_locations):
+                    international_match = res
+
+            if telugu_match and indian_match and international_match:
+                break
+        except Exception:
+            continue
 
     # Attach credits for active matches in parallel
     matches_to_fetch = [p for p in [telugu_match, indian_match, international_match] if p]
     if matches_to_fetch:
         def fetch_credits(p):
-            credits, _ = tmdb(f"/person/{p['id']}/combined_credits", {"language": "en-US"}, TMDB_DETAIL_CACHE_TTL)
-            if credits:
-                p["combined_credits"] = credits
+            with app_obj.app_context():
+                try:
+                    credits, _ = tmdb(f"/person/{p['id']}/combined_credits", {"language": "en-US"}, TMDB_DETAIL_CACHE_TTL)
+                    if credits and isinstance(credits, dict):
+                        p["combined_credits"] = credits
+                except Exception:
+                    pass
 
         with ThreadPoolExecutor(max_workers=3) as executor:
             list(executor.map(fetch_credits, matches_to_fetch))
@@ -642,7 +660,6 @@ def get_birthday_spotlight():
     }), 200
 
 
-
 # ============================================================================
 # MOVIE DETAILS & REVIEWS
 # ============================================================================
@@ -653,15 +670,14 @@ def movie_detail(movie_id):
         f"/movie/{movie_id}",
         {
             "language": "en-US",
-            "append_to_response": (
-                "videos,credits,similar"
-            ),
+            "append_to_response": "videos,credits,similar",
         },
         TMDB_DETAIL_CACHE_TTL
     )
 
     if error:
-        return error
+        err_dict, status_code = error
+        return jsonify(err_dict), status_code
 
     with closing(db()) as connection:
         reviews = connection.execute(
@@ -678,19 +694,12 @@ def movie_detail(movie_id):
             (movie_id,)
         ).fetchall()
 
-    data[
-        "powerflicks_reviews"
-    ] = [
-        dict(row)
-        for row in reviews
-    ]
+    data["powerflicks_reviews"] = [dict(row) for row in reviews]
 
-    return jsonify(data)
+    return jsonify(data), 200
 
 
-@app.get(
-    "/api/movies/<int:movie_id>/recommendations"
-)
+@app.get("/api/movies/<int:movie_id>/recommendations")
 def recommendations(movie_id):
     data, error = tmdb(
         f"/movie/{movie_id}/recommendations",
@@ -700,7 +709,11 @@ def recommendations(movie_id):
         }
     )
 
-    return error or jsonify(data)
+    if error:
+        err_dict, status_code = error
+        return jsonify(err_dict), status_code
+
+    return jsonify(data), 200
 
 
 # ============================================================================
@@ -801,6 +814,7 @@ def watchlist():
             ok=True
         )
 
+
 # ============================================================================
 # REVIEWS
 # ============================================================================
@@ -834,7 +848,6 @@ def post_review(movie_id=None):
     user = device_id()
     body = request.get_json(silent=True) or {}
 
-    # Handle movie_id from URL parameter or JSON body payload
     if movie_id is None:
         movie_id = body.get("movie_id")
 
@@ -843,7 +856,6 @@ def post_review(movie_id=None):
 
     author = str(body.get("author", "Anonymous")).strip() or "Anonymous"
 
-    # Accept 'content' or 'comment' and make text optional (defaulting to empty string)
     raw_content = body.get("content") if "content" in body else body.get("comment", "")
     comment = str(raw_content or "").strip()
 
@@ -884,7 +896,6 @@ def post_review(movie_id=None):
         connection.commit()
 
     return jsonify(ok=True, success=True, message="Review added successfully"), 201
-
 
 
 # ============================================================================
