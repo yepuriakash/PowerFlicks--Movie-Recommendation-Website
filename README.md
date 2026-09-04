@@ -1,37 +1,99 @@
-# PowerFlix
+# 🎬 PowerFlicks
 
-A Flask web app that uses the [TMDB API](https://developer.themoviedb.org/docs/getting-started) for correct, current movie posters, backdrops, titles, cast, discovery, search, and recommendations. The browser talks only to this backend: the TMDB token stays in `.env`.
+### A modern movie discovery platform built with Flask, JavaScript, SQLite, and the TMDB API.
 
-## Run locally
+PowerFlicks is a full-stack movie discovery web application designed to make finding movies more engaging and personalized.
 
-1. Create a TMDB account, then create a **Read Access Token** in its API settings.
-2. Copy `.env.example` to `.env` and add the token.
-3. Run:
+It combines live movie data from TMDB with search, discovery, movie details, recommendations, watchlists, community reviews, ratings, and movie-personality features in a single interface.
 
-```bash
-python3 -m venv .venv
-. .venv/bin/activate
-pip install -r requirements.txt
-python app.py
-```
+---
 
-Open `http://127.0.0.1:5000`.
+## 🔗 Links
 
-## Publish it
+- **Live Demo:** https://powerflicks-movie-recommendation-website.onrender.com
+- **GitHub:** https://github.com/yepuriakash/PowerFlicks--Movie-Recommendation-Website
 
-Deploy this folder to Render, Railway, Fly.io, or any service that supports Python. Configure:
+---
 
-- Build command: `pip install -r requirements.txt`
-- Start command: `gunicorn app:app`
-- Environment variable: `TMDB_API_TOKEN` (the token from TMDB)
+## 📸 Screenshots
 
-The included `Procfile` is recognized by several hosts. Never commit `.env` or expose the token in browser JavaScript.
+> Add screenshots of the application here.
 
-## Backend features
+### Home & Movie Discovery
 
-- Server-side TMDB proxy with timeouts and error handling.
-- SQLite-backed per-device watchlist and community reviews.
-- Input validation and parameterized SQL queries.
-- Same-origin API routes, avoiding client-side token/CORS issues.
+![PowerFlicks Home](screenshots/home.png)
 
-For a multi-user production release, replace the anonymous device ID with real authentication and move SQLite to managed Postgres.
+### Movie Details
+
+![PowerFlicks Movie Details](screenshots/movie-details.png)
+
+### Watchlist & Community Reviews
+
+![PowerFlicks Watchlist](screenshots/watchlist.png)
+
+---
+
+## 📖 Project Overview
+
+PowerFlicks was built as a full-stack movie discovery application with a focus on combining a polished frontend experience with a backend that handles external API communication and persistent user data.
+
+The application retrieves current movie information from the TMDB API while keeping the API credential on the server rather than exposing it to browser-side JavaScript.
+
+The Flask backend also provides application-specific API routes for features such as watchlists and community reviews, with SQLite providing local data persistence.
+
+---
+
+## ✨ Key Features
+
+- 🎬 Movie discovery using current TMDB data
+- 🔎 Movie search
+- ⭐ Movie ratings and popularity information
+- 🎭 Cast and movie details
+- 🎞️ Movie recommendations
+- 📋 Per-device watchlists
+- 💬 Community movie reviews
+- ⭐ User-submitted review ratings
+- 🎂 Movie personality / birthday spotlight features
+- 🖼️ Dynamic posters and backdrops
+- ⚡ Backend caching for frequently requested TMDB data
+- 🛡️ Server-side API credential handling
+- ✅ Input validation
+- 🗄️ SQLite-backed persistent application data
+- 📱 Responsive movie-focused interface
+
+---
+
+## ⚙️ How PowerFlicks Works
+
+PowerFlicks uses a backend-first architecture.
+
+The browser communicates with the Flask backend instead of directly communicating with TMDB.
+
+```text
+                         ┌──────────────┐
+                         │     User     │
+                         └──────┬───────┘
+                                │
+                                ▼
+                     ┌────────────────────┐
+                     │ PowerFlicks        │
+                     │ Frontend           │
+                     │ HTML / CSS / JS    │
+                     └─────────┬──────────┘
+                               │
+                               ▼
+                     ┌────────────────────┐
+                     │ Flask Backend      │
+                     │      app.py        │
+                     └─────────┬──────────┘
+                               │
+                  ┌────────────┴────────────┐
+                  ▼                         ▼
+        ┌──────────────────┐       ┌──────────────────┐
+        │ TMDB API         │       │ SQLite Database  │
+        │                  │       │                  │
+        │ Movies           │       │ Watchlist        │
+        │ Cast             │       │ Reviews          │
+        │ Search           │       │                  │
+        │ Recommendations  │       │                  │
+        └──────────────────┘       └──────────────────┘
