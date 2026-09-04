@@ -139,23 +139,37 @@ The browser communicates with the Flask backend instead of directly communicatin
 
 ## Engineering Highlights
 
-Backend-First API Architecture
+### Backend-First API Architecture
+
 Instead of allowing browser-side JavaScript to communicate directly with TMDB, PowerFlicks routes external API communication through Flask.
+
 This provides a cleaner separation between the frontend and backend while keeping sensitive configuration on the server.
-API Credential Protection
+
+### API Credential Protection
+
 The TMDB API credential is stored as an environment variable and accessed by the Flask backend.
+
 The credential is therefore not embedded directly into the frontend JavaScript.
-Backend Caching
+
+### Backend Caching
+
 Frequently requested TMDB information can be cached by the backend to reduce unnecessary external API requests and improve application responsiveness.
-Persistent Application Data
+
+### Persistent Application Data
+
 SQLite is used to persist application-specific information such as watchlists and community reviews.
-Dynamic Frontend
-The frontend uses JavaScript to dynamically update movie cards, search results, movie details, recommendations, reviews, and watchlist content without requiring a full page reload for every interaction
+
+### Dynamic Frontend
+
+The frontend uses JavaScript to dynamically update movie cards, search results, movie details, recommendations, reviews, and watchlist content without requiring a full page reload for every interaction.
 
 
 
 ## Security & API Handling
-PowerFlicks follows a backend-mediated API architecture
+
+PowerFlicks follows a backend-mediated API architecture.
+
+```text
 Browser
    |
    | Request
@@ -165,13 +179,17 @@ Flask Backend
    | API credential stays here
    v
 TMDB API
+```
+
 The TMDB API credential is kept on the server and configured through environment variables.
 
-For local development, create a .env file based on .env.example.
+For local development, create a `.env` file based on `.env.example`.
 
 Never commit real API credentials or secrets to GitHub.
 
 ## Project Structure
+
+```text
 PowerFlicks--Movie-Recommendation-Website/
 |
 ├── app.py
@@ -196,6 +214,7 @@ PowerFlicks--Movie-Recommendation-Website/
     ├── reviews.png
     ├── search-results.png
     └── my-list.png
+```
 
 ## Local Setup
 1. Clone the repository
